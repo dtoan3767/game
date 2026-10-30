@@ -3,54 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Shadow Fight Online PvP - Local Account</title>
+  <title>Shadow Fight Online PvP - Supabase DB</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    * {
-      user-select: none;
-      -webkit-user-select: none;
-      touch-action: manipulation;
-    }
-    body {
-      margin: 0;
-      background-color: #050b07;
-      color: #fff;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      overflow: hidden;
-    }
-    .avatar-frame {
-      border: 3px solid #d4af37;
-      box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
-    }
-    .hp-bar-fill {
-      transition: width 0.1s ease-out;
-    }
-    .joystick-base {
-      background: radial-gradient(circle, rgba(40,60,45,0.7) 0%, rgba(10,20,15,0.85) 100%);
-      border: 3px solid rgba(180, 220, 190, 0.4);
-      box-shadow: 0 0 15px rgba(0,0,0,0.8), inset 0 0 10px rgba(100,200,120,0.2);
-    }
-    .joystick-thumb {
-      background: radial-gradient(circle, #e67e22 0%, #d35400 70%, #a04000 100%);
-      border: 2px solid #f39c12;
-      box-shadow: 0 0 10px rgba(230, 126, 34, 0.8);
-    }
-    .btn-action {
-      background: radial-gradient(circle, rgba(50,60,70,0.8) 0%, rgba(20,25,30,0.9) 100%);
-      border: 2px solid rgba(255,255,255,0.3);
-      box-shadow: 0 4px 6px rgba(0,0,0,0.5);
-    }
-    .btn-action:active {
-      transform: scale(0.92);
-      border-color: #e67e22;
-      background: radial-gradient(circle, rgba(80,70,50,0.9) 0%, rgba(40,30,20,0.95) 100%);
-    }
-    .glass-panel {
-      background: rgba(15, 25, 20, 0.85);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(212, 175, 55, 0.3);
-    }
+    * { user-select: none; -webkit-user-select: none; touch-action: manipulation; }
+    body { margin: 0; background-color: #050b07; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
+    .avatar-frame { border: 3px solid #d4af37; box-shadow: 0 0 15px rgba(212, 175, 55, 0.4); }
+    .hp-bar-fill { transition: width 0.1s ease-out; }
+    .joystick-base { background: radial-gradient(circle, rgba(40,60,45,0.7) 0%, rgba(10,20,15,0.85) 100%); border: 3px solid rgba(180, 220, 190, 0.4); box-shadow: 0 0 15px rgba(0,0,0,0.8), inset 0 0 10px rgba(100,200,120,0.2); }
+    .joystick-thumb { background: radial-gradient(circle, #e67e22 0%, #d35400 70%, #a04000 100%); border: 2px solid #f39c12; box-shadow: 0 0 10px rgba(230, 126, 34, 0.8); }
+    .btn-action { background: radial-gradient(circle, rgba(50,60,70,0.8) 0%, rgba(20,25,30,0.9) 100%); border: 2px solid rgba(255,255,255,0.3); box-shadow: 0 4px 6px rgba(0,0,0,0.5); }
+    .btn-action:active { transform: scale(0.92); border-color: #e67e22; background: radial-gradient(circle, rgba(80,70,50,0.9) 0%, rgba(40,30,20,0.95) 100%); }
+    .glass-panel { background: rgba(15, 25, 20, 0.85); backdrop-filter: blur(10px); border: 1px solid rgba(212, 175, 55, 0.3); }
   </style>
 </head>
 <body class="flex flex-col items-center justify-center min-h-screen">
@@ -103,12 +68,8 @@
     <!-- TOUCH CONTROLS -->
     <div id="touchControls" class="absolute bottom-4 left-0 right-0 px-6 flex justify-between items-end pointer-events-auto hidden">
       <div id="joystickBase" class="w-36 h-36 rounded-full joystick-base relative flex items-center justify-center touch-none">
-        <div class="absolute inset-0 flex items-center justify-between px-2 text-stone-500 text-xs font-bold pointer-events-none">
-          <span>◀</span><span>▶</span>
-        </div>
-        <div class="absolute inset-0 flex flex-col items-center justify-between py-2 text-stone-500 text-xs font-bold pointer-events-none">
-          <span>▲</span><span>▼</span>
-        </div>
+        <div class="absolute inset-0 flex items-center justify-between px-2 text-stone-500 text-xs font-bold pointer-events-none"><span>◀</span><span>▶</span></div>
+        <div class="absolute inset-0 flex flex-col items-center justify-between py-2 text-stone-500 text-xs font-bold pointer-events-none"><span>▲</span><span>▼</span></div>
         <div id="joystickThumb" class="w-14 h-14 rounded-full joystick-thumb absolute pointer-events-none transition-transform duration-75"></div>
       </div>
 
@@ -125,11 +86,11 @@
       <p class="text-amber-200/70 text-xs md:text-sm mb-6">Trải nghiệm Võ Thuật Bóng Đêm PvP Online</p>
 
       <div id="authBox" class="w-full max-w-sm bg-stone-900/90 border border-amber-500/40 p-5 rounded-xl shadow-2xl mb-4">
-        <h2 id="authTitle" class="text-center font-bold text-amber-400 mb-3 text-base">ĐĂNG NHẬP / TẠO TÀI KHOẢN</h2>
+        <h2 class="text-center font-bold text-amber-400 mb-3 text-base">ĐĂNG NHẬP / ĐĂNG KÝ DATABASE</h2>
         
         <div class="space-y-3">
           <div>
-            <label class="text-[11px] text-amber-200/80 block mb-1">Tên Đăng Nhập (Username)</label>
+            <label class="text-[11px] text-amber-200/80 block mb-1">Tên Đăng Nhập</label>
             <input id="inputUsername" type="text" placeholder="Nhập tên tài khoản..." class="w-full bg-stone-950 border border-amber-900 focus:border-amber-500 text-amber-100 text-sm rounded px-3 py-2 outline-none">
           </div>
           <div>
@@ -141,15 +102,15 @@
 
           <div class="flex gap-2 pt-1">
             <button id="btnLogin" class="flex-1 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-stone-950 font-bold py-2 rounded text-sm transition">Đăng Nhập</button>
-            <button id="btnRegister" class="flex-1 bg-stone-800 hover:bg-stone-700 active:bg-stone-900 border border-amber-500/50 text-amber-300 font-bold py-2 rounded text-sm transition">Tạo Tài Khoản</button>
+            <button id="btnRegister" class="flex-1 bg-stone-800 hover:bg-stone-700 active:bg-stone-900 border border-amber-500/50 text-amber-300 font-bold py-2 rounded text-sm transition">Đăng Ký Mới</button>
           </div>
         </div>
       </div>
 
       <div id="gameModesBox" class="w-full max-w-sm space-y-3 hidden">
         <div class="flex items-center justify-between bg-stone-900/80 px-4 py-2 rounded-lg border border-amber-500/30">
-          <span class="text-xs text-stone-400">Xin chào, <strong id="userDisplayName" class="text-amber-400 text-sm">Player</strong></span>
-          <button id="btnLogout" class="text-xs text-red-400 hover:underline">Đổi tài khoản</button>
+          <span class="text-xs text-stone-400">Tài khoản: <strong id="userDisplayName" class="text-amber-400 text-sm">Player</strong></span>
+          <button id="btnLogout" class="text-xs text-red-400 hover:underline">Đăng xuất</button>
         </div>
 
         <button id="btnOfflineMode" class="w-full py-3 bg-gradient-to-r from-stone-800 to-stone-700 hover:from-stone-700 hover:to-stone-600 border border-stone-500 rounded-lg font-bold text-amber-200 text-sm flex items-center justify-center gap-2 shadow-md">
@@ -158,7 +119,7 @@
 
         <div class="relative flex py-1 items-center">
           <div class="flex-grow border-t border-amber-900/50"></div>
-          <span class="flex-shrink mx-3 text-[10px] text-amber-500 uppercase tracking-widest">Chế Độ Online PvP (Supabase Realtime)</span>
+          <span class="flex-shrink mx-3 text-[10px] text-amber-500 uppercase tracking-widest">Chế Độ Online PvP</span>
           <div class="flex-grow border-t border-amber-900/50"></div>
         </div>
 
@@ -187,7 +148,6 @@
   </div>
 
   <script>
-    // Cấu hình Supabase (Chỉ dùng cho tính năng Room Online PvP)
     const SUPABASE_URL = "https://boyucafuxksicwwzdpxl.supabase.co";
     const SUPABASE_ANON_KEY = "sb_publishable_Ec7Nh_W8CpUM-uEVNg5_IA_4o4zihm0";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -209,11 +169,8 @@
 
     class Fighter {
       constructor(x, color, isPlayer1) {
-        this.startX = x;
         this.x = x;
         this.y = GROUND_Y;
-        this.width = 45;
-        this.height = 110;
         this.vx = 0;
         this.vy = 0;
         this.speed = 5.5;
@@ -307,7 +264,6 @@
       draw(ctx) {
         ctx.save();
         ctx.translate(this.x, this.y);
-
         ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
         ctx.beginPath();
         ctx.ellipse(0, 0, 30, 8, 0, 0, Math.PI * 2);
@@ -367,7 +323,6 @@
           ctx.moveTo(5, -70); ctx.lineTo(18, -65);
         }
         ctx.stroke();
-
         ctx.restore();
       }
     }
@@ -553,21 +508,19 @@
       }
     }
 
+    // Controls
     const keys = {};
     window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; handleInput(); });
     window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; handleInput(); });
 
     function handleInput() {
       if (isGameOver) return;
-
       if (gameMode === 'OFFLINE' || gameMode === 'PVP_HOST') {
         if (keys['a']) player1.vx = -player1.speed;
         else if (keys['d']) player1.vx = player1.speed;
         else player1.vx = 0;
-
         if (keys['w'] && player1.isGrounded) player1.vy = player1.jumpForce;
         if (keys['s']) player1.state = 'crouch';
-
         if (keys['j']) player1.attack('punch');
         if (keys['k']) player1.attack('kick');
         if (keys['u']) player1.attack('weapon');
@@ -577,7 +530,6 @@
         if (keys['arrowleft']) player2.vx = -player2.speed;
         else if (keys['arrowright']) player2.vx = player2.speed;
         else player2.vx = 0;
-
         if (keys['arrowup'] && player2.isGrounded) player2.vy = player2.jumpForce;
         if (keys['1']) player2.attack('punch');
         if (keys['2']) player2.attack('kick');
@@ -587,7 +539,6 @@
         if (keys['a'] || keys['arrowleft']) vx = -player2.speed;
         if (keys['d'] || keys['arrowright']) vx = player2.speed;
         sendGuestInput({ type: 'move', vx: vx });
-
         if (keys['w'] || keys['arrowup']) sendGuestInput({ type: 'jump' });
         if (keys['j'] || keys['1']) sendGuestInput({ type: 'attack', attackType: 'punch' });
         if (keys['k'] || keys['2']) sendGuestInput({ type: 'attack', attackType: 'kick' });
@@ -633,23 +584,20 @@
       const rect = joystickBase.getBoundingClientRect();
       const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
-
       let dx = touch.clientX - centerX;
       let dy = touch.clientY - centerY;
       const maxRadius = 45;
-
       const distance = Math.hypot(dx, dy);
       if (distance > maxRadius) {
         dx = (dx / distance) * maxRadius;
         dy = (dy / distance) * maxRadius;
       }
-
       joystickThumb.style.transform = `translate(${dx}px, ${dy}px)`;
       const activeFighter = (gameMode === 'PVP_GUEST') ? player2 : player1;
 
       if (dx < -15) {
         if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'move', vx: -activeFighter.speed });
-        else activeFigned.vx = -activeFighter.speed;
+        else activeFighter.vx = -activeFighter.speed;
       } else if (dx > 15) {
         if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'move', vx: activeFighter.speed });
         else activeFighter.vx = activeFighter.speed;
@@ -664,26 +612,12 @@
       }
     }
 
-    document.getElementById('btnPunch').addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'attack', attackType: 'punch' });
-      else player1.attack('punch');
-    });
-
-    document.getElementById('btnKick').addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'attack', attackType: 'kick' });
-      else player1.attack('kick');
-    });
-
-    document.getElementById('btnWeapon').addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'attack', attackType: 'weapon' });
-      else player1.attack('weapon');
-    });
+    document.getElementById('btnPunch').addEventListener('touchstart', (e) => { e.preventDefault(); if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'attack', attackType: 'punch' }); else player1.attack('punch'); });
+    document.getElementById('btnKick').addEventListener('touchstart', (e) => { e.preventDefault(); if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'attack', attackType: 'kick' }); else player1.attack('kick'); });
+    document.getElementById('btnWeapon').addEventListener('touchstart', (e) => { e.preventDefault(); if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'attack', attackType: 'weapon' }); else player1.attack('weapon'); });
 
     // ==========================================
-    // HỆ THỐNG TÀI KHOẢN CỤC BỘ (LOCAL ACCOUNTS)
+    // LOGIC ĐĂNG KÝ / ĐĂNG NHẬP TRỰC TIẾP TỪ SUPABASE TABLE
     // ==========================================
     const btnLogin = document.getElementById('btnLogin');
     const btnRegister = document.getElementById('btnRegister');
@@ -692,71 +626,77 @@
     const authBox = document.getElementById('authBox');
     const gameModesBox = document.getElementById('gameModesBox');
 
-    // Kiểm tra tài khoản đã lưu sẵn trong máy khi vừa mở web
-    function checkLocalSession() {
-      const savedUser = localStorage.getItem('shadow_fight_user');
+    // Kiểm tra session lưu trong máy
+    function checkSavedSession() {
+      const savedUser = localStorage.getItem('shadow_player');
       if (savedUser) {
         showAuthenticatedUI(savedUser);
       }
     }
 
-    // Nút Tạo Tài Khoản Mới
-    btnRegister.addEventListener('click', () => {
+    // Đăng ký tài khoản vào bảng players
+    btnRegister.addEventListener('click', async () => {
       const username = document.getElementById('inputUsername').value.trim();
       const password = document.getElementById('inputPassword').value.trim();
 
       if (!username || !password) {
-        authMsg.className = "text-xs text-center text-red-400 min-h-[16px]";
-        authMsg.innerText = "Vui lòng nhập Username và Mật khẩu!";
+        authMsg.innerText = "Vui lòng nhập đầy đủ tên và mật khẩu!";
         return;
       }
 
-      // Lưu thông tin vào LocalStorage
-      const existingPass = localStorage.getItem(`pass_${username}`);
-      if (existingPass) {
+      authMsg.className = "text-xs text-center text-amber-400 min-h-[16px]";
+      authMsg.innerText = "Đang đăng ký...";
+
+      // Kiểm tra xem user đã tồn tại chưa
+      const { data: existing } = await supabase.from('players').select('*').eq('username', username).maybeSingle();
+      if (existing) {
         authMsg.className = "text-xs text-center text-red-400 min-h-[16px]";
-        authMsg.innerText = "Tên tài khoản này đã tồn tại trên thiết bị!";
+        authMsg.innerText = "Tên tài khoản này đã được sử dụng!";
         return;
       }
 
-      localStorage.setItem(`pass_${username}`, password);
-      localStorage.setItem('shadow_fight_user', username);
+      // Thêm mới vào database
+      const { error } = await supabase.from('players').insert([{ username: username, password: password }]);
+      if (error) {
+        authMsg.className = "text-xs text-center text-red-400 min-h-[16px]";
+        authMsg.innerText = "Lỗi: " + error.message;
+      } else {
+        localStorage.setItem('shadow_player', username);
+        authMsg.className = "text-xs text-center text-green-400 min-h-[16px]";
+        authMsg.innerText = "Đăng ký thành công!";
+        setTimeout(() => showAuthenticatedUI(username), 600);
+      }
+    });
 
-      authMsg.className = "text-xs text-center text-green-400 min-h-[16px]";
-      authMsg.innerText = "Tạo tài khoản thành công!";
-      setTimeout(() => {
+    // Đăng nhập từ bảng players
+    btnLogin.addEventListener('click', async () => {
+      const username = document.getElementById('inputUsername').value.trim();
+      const password = document.getElementById('inputPassword').value.trim();
+
+      if (!username || !password) {
+        authMsg.innerText = "Vui lòng nhập đầy đủ tên và mật khẩu!";
+        return;
+      }
+
+      authMsg.className = "text-xs text-center text-amber-400 min-h-[16px]";
+      authMsg.innerText = "Đang kiểm tra...";
+
+      const { data, error } = await supabase.from('players').select('*').eq('username', username).maybeSingle();
+
+      if (error || !data) {
+        authMsg.className = "text-xs text-center text-red-400 min-h-[16px]";
+        authMsg.innerText = "Tài khoản không tồn tại!";
+      } else if (data.password !== password) {
+        authMsg.className = "text-xs text-center text-red-400 min-h-[16px]";
+        authMsg.innerText = "Sai mật khẩu!";
+      } else {
+        localStorage.setItem('shadow_player', username);
         showAuthenticatedUI(username);
-      }, 500);
+      }
     });
 
-    // Nút Đăng Nhập
-    btnLogin.addEventListener('click', () => {
-      const username = document.getElementById('inputUsername').value.trim();
-      const password = document.getElementById('inputPassword').value.trim();
-
-      if (!username || !password) {
-        authMsg.className = "text-xs text-center text-red-400 min-h-[16px]";
-        authMsg.innerText = "Vui lòng nhập Username và Mật khẩu!";
-        return;
-      }
-
-      const savedPass = localStorage.getItem(`pass_${username}`);
-      if (!savedPass) {
-        // Cho phép tự động tạo luôn nếu tài khoản chưa có trên thiết bị này
-        localStorage.setItem(`pass_${username}`, password);
-      } else if (savedPass !== password) {
-        authMsg.className = "text-xs text-center text-red-400 min-h-[16px]";
-        authMsg.innerText = "Sai mật khẩu tài khoản!";
-        return;
-      }
-
-      localStorage.setItem('shadow_fight_user', username);
-      showAuthenticatedUI(username);
-    });
-
-    // Nút Đăng xuất / Đổi tài khoản
     btnLogout.addEventListener('click', () => {
-      localStorage.removeItem('shadow_fight_user');
+      localStorage.removeItem('shadow_player');
       authBox.classList.remove('hidden');
       gameModesBox.classList.add('hidden');
       authMsg.innerText = "";
@@ -768,7 +708,7 @@
       document.getElementById('userDisplayName').innerText = name;
     }
 
-    checkLocalSession();
+    checkSavedSession();
 
     document.getElementById('btnOfflineMode').addEventListener('click', () => {
       gameMode = 'OFFLINE';
@@ -783,10 +723,7 @@
 
     document.getElementById('btnJoinRoom').addEventListener('click', () => {
       const code = document.getElementById('inputRoomCode').value.trim();
-      if (code.length !== 4) {
-        alert("Vui lòng nhập đủ mã phòng 4 chữ số!");
-        return;
-      }
+      if (code.length !== 4) { alert("Nhập mã phòng 4 số!"); return; }
       setupRealtimeRoom(code, false);
     });
 
