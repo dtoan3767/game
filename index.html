@@ -1,672 +1,501 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Shadow Fight Online PvP</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    * { user-select: none; -webkit-user-select: none; touch-action: manipulation; }
-    body { margin: 0; background-color: #050b07; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow: hidden; }
-    .avatar-frame { border: 3px solid #d4af37; box-shadow: 0 0 15px rgba(212, 175, 55, 0.4); }
-    .hp-bar-fill { transition: width 0.1s ease-out; }
-    .joystick-base { background: radial-gradient(circle, rgba(40,60,45,0.7) 0%, rgba(10,20,15,0.85) 100%); border: 3px solid rgba(180, 220, 190, 0.4); box-shadow: 0 0 15px rgba(0,0,0,0.8), inset 0 0 10px rgba(100,200,120,0.2); }
-    .joystick-thumb { background: radial-gradient(circle, #e67e22 0%, #d35400 70%, #a04000 100%); border: 2px solid #f39c12; box-shadow: 0 0 10px rgba(230, 126, 34, 0.8); }
-    .btn-action { background: radial-gradient(circle, rgba(50,60,70,0.8) 0%, rgba(20,25,30,0.9) 100%); border: 2px solid rgba(255,255,255,0.3); box-shadow: 0 4px 6px rgba(0,0,0,0.5); }
-    .btn-action:active { transform: scale(0.92); border-color: #e67e22; background: radial-gradient(circle, rgba(80,70,50,0.9) 0%, rgba(40,30,20,0.95) 100%); }
-    .glass-panel { background: rgba(15, 25, 20, 0.85); backdrop-filter: blur(10px); border: 1px solid rgba(212, 175, 55, 0.3); }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Shadow Fight Online PvP</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { user-select:none; -webkit-user-select:none; touch-action:manipulation; }
+  html,body { margin:0; height:100%; background:#050b07; color:#fff; font-family:'Segoe UI',Tahoma,sans-serif; overflow:hidden; }
+  #stage { position:relative; width:min(100vw,calc(100vh*16/9)); aspect-ratio:16/9; background:#000; overflow:hidden; }
+  .avatar-frame { border:3px solid #d4af37; box-shadow:0 0 15px rgba(212,175,55,.4); }
+  .hp-fill { transition:width .1s ease-out; }
+  .joy-base { background:radial-gradient(circle,rgba(40,60,45,.7),rgba(10,20,15,.85)); border:3px solid rgba(180,220,190,.4); touch-action:none; }
+  .joy-thumb { background:radial-gradient(circle,#e67e22,#a04000); border:2px solid #f39c12; }
+  .btn-action { background:radial-gradient(circle,rgba(50,60,70,.8),rgba(20,25,30,.9)); border:2px solid rgba(255,255,255,.3); touch-action:none; }
+  .btn-action:active { transform:scale(.92); border-color:#e67e22; }
+  .glass { background:rgba(15,25,20,.88); backdrop-filter:blur(10px); }
+</style>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen">
+<body class="flex items-center justify-center">
+<div id="stage">
+  <canvas id="cv" width="1000" height="562" class="w-full h-full block"></canvas>
 
-  <div class="relative w-full max-w-[1000px] h-[100vh] max-h-[562.5px] bg-black overflow-hidden shadow-2xl rounded-none md:rounded-lg">
-    
-    <!-- CANVAS GAME -->
-    <canvas id="gameCanvas" width="1000" height="562" class="w-full h-full block bg-black"></canvas>
-
-    <!-- TOP HUD GAME -->
-    <div id="gameHud" class="absolute top-0 left-0 right-0 p-3 flex justify-between items-start pointer-events-none hidden">
-      <div class="flex items-center gap-2 w-[42%]">
-        <div class="w-14 h-14 rounded-full bg-neutral-800 avatar-frame flex-shrink-0 flex items-center justify-center overflow-hidden">
-          <span class="text-2xl font-bold text-amber-500">🥷</span>
-        </div>
-        <div class="flex-1">
-          <div class="flex justify-between items-center mb-1">
-            <span id="p1NameLabel" class="text-xs font-bold tracking-widest text-amber-400 drop-shadow">SHADOW (P1)</span>
-            <span id="p1HpNum" class="text-xs font-bold text-amber-200">100 HP</span>
-          </div>
-          <div class="w-full bg-red-950 h-4 rounded border border-amber-900 overflow-hidden relative">
-            <div id="p1HpBar" class="h-full bg-gradient-to-r from-red-600 via-amber-500 to-green-500 hp-bar-fill w-full"></div>
-          </div>
-        </div>
-      </div>
-
-      <div class="flex flex-col items-center justify-center w-[12%]">
-        <div class="w-12 h-12 rounded-full bg-stone-900 border-2 border-amber-500 flex items-center justify-center text-amber-400 font-extrabold text-xl shadow-lg">
-          <span id="timerText">99</span>
-        </div>
-        <span id="roomTag" class="text-[10px] text-amber-300 font-mono mt-1 bg-stone-900/80 px-2 py-0.5 rounded border border-amber-500/30">Lobby</span>
-      </div>
-
-      <div class="flex items-center gap-2 w-[42%] flex-row-reverse">
-        <div class="w-14 h-14 rounded-full bg-neutral-800 avatar-frame flex-shrink-0 flex items-center justify-center overflow-hidden">
-          <span class="text-2xl font-bold text-amber-500">⚔️</span>
-        </div>
-        <div class="flex-1 text-right">
-          <div class="flex justify-between items-center mb-1 flex-row-reverse">
-            <span id="p2NameLabel" class="text-xs font-bold tracking-widest text-amber-400 drop-shadow">NINJA (P2)</span>
-            <span id="p2HpNum" class="text-xs font-bold text-amber-200">100 HP</span>
-          </div>
-          <div class="w-full bg-red-950 h-4 rounded border border-amber-900 overflow-hidden relative flex justify-end">
-            <div id="p2HpBar" class="h-full bg-gradient-to-l from-red-600 via-amber-500 to-green-500 hp-bar-fill w-full"></div>
-          </div>
-        </div>
+  <!-- HUD -->
+  <div id="hud" class="absolute top-0 left-0 right-0 p-2 flex justify-between items-start pointer-events-none hidden">
+    <div class="flex items-center gap-2 w-[42%]">
+      <div class="w-11 h-11 rounded-full bg-neutral-800 avatar-frame flex items-center justify-center text-xl shrink-0">🥷</div>
+      <div class="flex-1 min-w-0">
+        <div class="flex justify-between text-[11px] font-bold text-amber-300"><span id="n1" class="truncate">P1</span><span id="h1">100</span></div>
+        <div class="h-3 bg-red-950 rounded border border-amber-900 overflow-hidden"><div id="b1" class="h-full bg-gradient-to-r from-red-600 via-amber-500 to-green-500 hp-fill" style="width:100%"></div></div>
       </div>
     </div>
-
-    <!-- TOUCH CONTROLS -->
-    <div id="touchControls" class="absolute bottom-4 left-0 right-0 px-6 flex justify-between items-end pointer-events-auto hidden">
-      <div id="joystickBase" class="w-36 h-36 rounded-full joystick-base relative flex items-center justify-center touch-none">
-        <div class="absolute inset-0 flex items-center justify-between px-2 text-stone-500 text-xs font-bold pointer-events-none"><span>◀</span><span>▶</span></div>
-        <div class="absolute inset-0 flex flex-col items-center justify-between py-2 text-stone-500 text-xs font-bold pointer-events-none"><span>▲</span><span>▼</span></div>
-        <div id="joystickThumb" class="w-14 h-14 rounded-full joystick-thumb absolute pointer-events-none transition-transform duration-75"></div>
-      </div>
-
-      <div class="relative w-44 h-44 pointer-events-auto">
-        <button id="btnPunch" class="absolute bottom-2 right-2 w-16 h-16 rounded-full btn-action flex items-center justify-center text-2xl active:scale-95">👊</button>
-        <button id="btnKick" class="absolute bottom-2 right-20 w-14 h-14 rounded-full btn-action flex items-center justify-center text-xl active:scale-95">🦶</button>
-        <button id="btnWeapon" class="absolute bottom-20 right-2 w-14 h-14 rounded-full btn-action flex items-center justify-center text-xl active:scale-95">⚔️</button>
+    <div class="flex flex-col items-center w-[12%]">
+      <div id="timer" class="w-10 h-10 rounded-full bg-stone-900 border-2 border-amber-500 flex items-center justify-center text-amber-400 font-extrabold">99</div>
+      <span id="roomTag" class="text-[10px] text-amber-300 font-mono mt-1 bg-stone-900/80 px-2 rounded">-</span>
+    </div>
+    <div class="flex items-center gap-2 w-[42%] flex-row-reverse">
+      <div class="w-11 h-11 rounded-full bg-neutral-800 avatar-frame flex items-center justify-center text-xl shrink-0">⚔️</div>
+      <div class="flex-1 min-w-0">
+        <div class="flex justify-between flex-row-reverse text-[11px] font-bold text-amber-300"><span id="n2" class="truncate">P2</span><span id="h2">100</span></div>
+        <div class="h-3 bg-red-950 rounded border border-amber-900 overflow-hidden flex justify-end"><div id="b2" class="h-full bg-gradient-to-l from-red-600 via-amber-500 to-green-500 hp-fill" style="width:100%"></div></div>
       </div>
     </div>
-
-    <!-- MAIN MENU -->
-    <div id="mainMenu" class="absolute inset-0 glass-panel flex flex-col items-center justify-center p-6 z-20 pointer-events-auto">
-      <h1 class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-600 tracking-wider mb-2">SHADOW FIGHT 2D</h1>
-      <p class="text-amber-200/70 text-xs md:text-sm mb-6">Trải nghiệm Võ Thuật Bóng Đêm PvP Online</p>
-
-      <!-- KHUNG NHẬP TÊN -->
-      <div id="nicknameBox" class="w-full max-w-sm bg-stone-900/90 border border-amber-500/40 p-5 rounded-xl shadow-2xl mb-4 pointer-events-auto">
-        <h2 class="text-center font-bold text-amber-400 mb-3 text-base">NHẬP TÊN NGƯỜI CHƠI</h2>
-        <div class="space-y-3">
-          <input id="inputNickname" type="text" placeholder="Nhập tên của bạn..." class="w-full bg-stone-950 border border-amber-900 focus:border-amber-500 text-amber-100 text-sm rounded px-3 py-2.5 outline-none text-center font-bold tracking-wide">
-          <button id="btnEnterGame" class="w-full bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-stone-950 font-black py-2.5 rounded text-sm transition shadow-lg cursor-pointer">
-            VÀO MENU CHÍNH ➔
-          </button>
-        </div>
-      </div>
-
-      <!-- KHUNG CHỌN CHẾ ĐỘ CHƠI -->
-      <div id="gameModesBox" class="w-full max-w-sm space-y-3 hidden pointer-events-auto">
-        <div class="flex items-center justify-between bg-stone-900/80 px-4 py-2 rounded-lg border border-amber-500/30">
-          <span class="text-xs text-stone-400">Đấu sĩ: <strong id="userDisplayName" class="text-amber-400 text-sm">Player</strong></span>
-          <button id="btnChangeName" class="text-xs text-amber-300 hover:underline cursor-pointer">Đổi tên</button>
-        </div>
-
-        <button id="btnOfflineMode" class="w-full py-3 bg-gradient-to-r from-stone-800 to-stone-700 hover:from-stone-700 hover:to-stone-600 border border-stone-500 rounded-lg font-bold text-amber-200 text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer">
-          <span>🤖</span> Chơi Đơn (VS AI / 2 Người 1 Máy)
-        </button>
-
-        <div class="relative flex py-1 items-center">
-          <div class="flex-grow border-t border-amber-900/50"></div>
-          <span class="flex-shrink mx-3 text-[10px] text-amber-500 uppercase tracking-widest">Chế Độ Online PvP</span>
-          <div class="flex-grow border-t border-amber-900/50"></div>
-        </div>
-
-        <div class="flex gap-2">
-          <button id="btnCreateRoom" class="flex-1 py-3 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-stone-950 font-black rounded-lg text-sm shadow-lg cursor-pointer">
-            ➕ Tạo Phòng (P1)
-          </button>
-          
-          <div class="flex-1 flex gap-1">
-            <input id="inputRoomCode" type="text" maxlength="4" placeholder="Mã..." class="w-16 bg-stone-950 border border-amber-800 rounded text-center text-amber-300 font-mono font-bold text-sm outline-none uppercase">
-            <button id="btnJoinRoom" class="flex-1 py-3 bg-stone-800 hover:bg-stone-700 border border-amber-500/50 text-amber-400 font-bold rounded-lg text-sm cursor-pointer">
-              Vào Phòng
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- STATUS MODAL -->
-    <div id="gameStatusModal" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-30 hidden pointer-events-auto">
-      <h2 id="statusTitle" class="text-3xl font-black text-amber-400 mb-2">CHIẾN THẮNG!</h2>
-      <p id="statusDesc" class="text-sm text-stone-300 mb-6">Player 1 đã hạ gục đối thủ.</p>
-      <button id="btnBackToMenu" class="px-6 py-2.5 bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold rounded-lg text-sm cursor-pointer">Về Menu Chính</button>
-    </div>
-
   </div>
 
-  <script>
-    const SUPABASE_URL = "https://boyucafuxksicwwzdpxl.supabase.co";
-    const SUPABASE_ANON_KEY = "sb_publishable_Ec7Nh_W8CpUM-uEVNg5_IA_4o4zihm0";
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  <!-- TOUCH -->
+  <div id="touch" class="absolute bottom-3 left-0 right-0 px-5 flex justify-between items-end hidden pointer-events-none">
+    <div id="joy" class="w-32 h-32 rounded-full joy-base relative flex items-center justify-center pointer-events-auto">
+      <div id="thumb" class="w-12 h-12 rounded-full joy-thumb absolute pointer-events-none"></div>
+    </div>
+    <div class="relative w-40 h-36 pointer-events-auto">
+      <button id="bPunch" class="absolute bottom-1 right-1 w-16 h-16 rounded-full btn-action text-2xl">👊</button>
+      <button id="bKick" class="absolute bottom-1 right-[4.8rem] w-14 h-14 rounded-full btn-action text-xl">🦶</button>
+      <button id="bWeapon" class="absolute bottom-[4.8rem] right-1 w-14 h-14 rounded-full btn-action text-xl">⚔️</button>
+    </div>
+  </div>
 
-    let gameMode = 'OFFLINE';
-    let realtimeChannel = null;
-    let roomCode = null;
-    let playerName = "Player";
+  <!-- MENU -->
+  <div id="menu" class="absolute inset-0 glass flex flex-col items-center justify-center p-4 z-20 overflow-y-auto">
+    <h1 class="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-600 mb-1">SHADOW FIGHT 2D</h1>
+    <p class="text-amber-200/70 text-xs mb-4">Võ thuật bóng đêm PvP Online</p>
 
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
+    <div id="nameBox" class="w-full max-w-sm bg-stone-900/90 border border-amber-500/40 p-4 rounded-xl space-y-3">
+      <h2 class="text-center font-bold text-amber-400 text-sm">NHẬP TÊN NGƯỜI CHƠI</h2>
+      <input id="inName" maxlength="12" placeholder="Tên của bạn..." class="w-full bg-stone-950 border border-amber-900 focus:border-amber-500 text-amber-100 text-sm rounded px-3 py-2 outline-none text-center font-bold">
+      <button id="btnEnter" class="w-full bg-amber-600 hover:bg-amber-500 text-stone-950 font-black py-2 rounded text-sm">VÀO MENU ➔</button>
+    </div>
 
-    const GAME_WIDTH = 1000;
-    const GAME_HEIGHT = 562;
-    const GROUND_Y = 460;
+    <div id="modeBox" class="w-full max-w-sm space-y-2 hidden">
+      <div class="flex justify-between items-center bg-stone-900/80 px-3 py-1.5 rounded-lg border border-amber-500/30 text-xs">
+        <span class="text-stone-400">Đấu sĩ: <b id="dispName" class="text-amber-400 text-sm"></b></span>
+        <button id="btnRename" class="text-amber-300 underline">Đổi tên</button>
+      </div>
+      <div class="flex gap-2">
+        <button id="btnAI" class="flex-1 py-2.5 bg-stone-800 hover:bg-stone-700 border border-stone-500 rounded-lg font-bold text-amber-200 text-xs">🤖 Đấu máy</button>
+        <button id="btn2P" class="flex-1 py-2.5 bg-stone-800 hover:bg-stone-700 border border-stone-500 rounded-lg font-bold text-amber-200 text-xs">👥 2 người 1 máy</button>
+      </div>
+      <div class="text-center text-[10px] text-amber-500 uppercase tracking-widest">Online PvP</div>
+      <div class="flex gap-2">
+        <button id="btnCreate" class="flex-1 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 text-stone-950 font-black rounded-lg text-xs">➕ Tạo phòng</button>
+        <div class="flex-1 flex gap-1">
+          <input id="inRoom" maxlength="4" inputmode="numeric" placeholder="Mã" class="w-14 bg-stone-950 border border-amber-800 rounded text-center text-amber-300 font-mono font-bold text-sm outline-none">
+          <button id="btnJoin" class="flex-1 py-2.5 bg-stone-800 border border-amber-500/50 text-amber-400 font-bold rounded-lg text-xs">Vào phòng</button>
+        </div>
+      </div>
+      <p class="text-[10px] text-stone-400 text-center leading-relaxed">Phím: <b>A/D</b> di chuyển · <b>W</b> nhảy · <b>S</b> cúi (né đòn cao) · <b>J</b> đấm · <b>K</b> đá · <b>U</b> kiếm.<br>P2 (2 người 1 máy): mũi tên + 1/2/3</p>
+    </div>
+  </div>
 
-    let timer = 99;
-    let timerInterval = null;
-    let isGameOver = false;
+  <!-- WAITING -->
+  <div id="wait" class="absolute inset-0 bg-black/85 flex flex-col items-center justify-center z-30 hidden">
+    <p id="waitMsg" class="text-sm text-stone-300 mb-1">Đang chờ đối thủ...</p>
+    <div id="waitCode" class="text-6xl font-black text-amber-400 tracking-[.3em] mb-2">0000</div>
+    <p class="text-xs text-stone-400 mb-4">Gửi mã này cho bạn bè để vào phòng</p>
+    <button id="btnCancel" class="px-5 py-2 bg-stone-700 hover:bg-stone-600 rounded-lg text-sm font-bold">Huỷ</button>
+  </div>
 
-    class Fighter {
-      constructor(x, color, isPlayer1) {
-        this.x = x;
-        this.y = GROUND_Y;
-        this.vx = 0;
-        this.vy = 0;
-        this.speed = 5.5;
-        this.jumpForce = -14;
-        this.gravity = 0.65;
-        this.isGrounded = true;
-        this.facing = isPlayer1 ? 1 : -1;
-        this.hp = 100;
-        this.color = color;
-        this.isP1 = isPlayer1;
-        this.state = 'idle';
-        this.stateTimer = 0;
-        this.attackBox = null;
-        this.hasHit = false;
-      }
+  <!-- RESULT -->
+  <div id="result" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-30 hidden">
+    <h2 id="resTitle" class="text-3xl font-black text-amber-400 mb-1 text-center px-4"></h2>
+    <p id="resDesc" class="text-sm text-stone-300 mb-5 text-center px-4"></p>
+    <div class="flex gap-2">
+      <button id="btnRematch" class="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold rounded-lg text-sm">Chơi lại</button>
+      <button id="btnMenu" class="px-5 py-2 bg-stone-700 hover:bg-stone-600 font-bold rounded-lg text-sm">Về menu</button>
+    </div>
+  </div>
 
-      reset(x) {
-        this.x = x;
-        this.y = GROUND_Y;
-        this.vx = 0;
-        this.vy = 0;
-        this.hp = 100;
-        this.state = 'idle';
-        this.stateTimer = 0;
-        this.isGrounded = true;
-        this.facing = this.isP1 ? 1 : -1;
-      }
+  <div id="toast" class="absolute top-16 left-1/2 -translate-x-1/2 bg-stone-900/95 border border-amber-500/50 text-amber-200 text-xs px-4 py-2 rounded-lg z-40 hidden"></div>
+</div>
 
-      update(enemy) {
-        this.vy += this.gravity;
-        this.x += this.vx;
-        this.y += this.vy;
+<script>
+// ================= CONFIG =================
+const SUPABASE_URL = "https://boyucafuxksicwwzdpxl.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_Ec7Nh_W8CpUM-uEVNg5_IA_4o4zihm0";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        if (this.y >= GROUND_Y) {
-          this.y = GROUND_Y;
-          this.vy = 0;
-          this.isGrounded = true;
-        } else {
-          this.isGrounded = false;
-        }
+const $ = id => document.getElementById(id);
+const cv = $('cv'), ctx = cv.getContext('2d');
+const W = 1000, H = 562, GROUND = 460, DT = 1000 / 60;
 
-        if (this.state === 'idle' || this.state === 'run') {
-          if (this.x < enemy.x) this.facing = 1;
-          else this.facing = -1;
-        }
+// ================= STATE =================
+let mode = 'MENU';           // MENU | AI | LOCAL2P | HOST | GUEST
+let running = false, over = false;
+let timer = 99, ticks = 0;
+let channel = null, roomCode = null, myId = Math.random().toString(36).slice(2, 9);
+let guestId = null, guestJoined = false, joinTimer = null;
+let playerName = 'Player', oppName = 'Đối thủ';
+let remote = { l:0, r:0, u:0, d:0, atk:null };
+let lastSent = '';
 
-        if (this.x < 30) this.x = 30;
-        if (this.x > GAME_WIDTH - 30) this.x = GAME_WIDTH - 30;
+const ATK = {
+  punch:  { t:18, w:50, h:25, oy:85, dmg:8 },
+  kick:   { t:22, w:60, h:30, oy:55, dmg:12 },
+  weapon: { t:28, w:80, h:40, oy:95, dmg:18 }
+};
 
-        if (this.stateTimer > 0) {
-          this.stateTimer--;
-          if (this.stateTimer <= 0) {
-            this.state = 'idle';
-            this.attackBox = null;
-            this.hasHit = false;
-          }
-        }
+// ================= FIGHTER =================
+class Fighter {
+  constructor(isP1) { this.isP1 = isP1; this.reset(); }
+  reset() {
+    this.x = this.isP1 ? 250 : 750; this.y = GROUND; this.vx = 0; this.vy = 0;
+    this.hp = 100; this.state = 'idle'; this.timer = 0; this.dur = 0;
+    this.hasHit = false; this.invuln = 0; this.flash = 0;
+    this.facing = this.isP1 ? 1 : -1; this.grounded = true;
+    this.tx = this.x; this.ty = this.y;
+  }
+  get attacking() { return this.state in ATK; }
+  hurtbox() { const h = this.state === 'crouch' ? 55 : 100; return { x:this.x - 20, y:this.y - h, w:40, h }; }
+  attack(type) {
+    if (this.attacking || this.state === 'hit' || !ATK[type]) return;
+    this.state = type; this.dur = this.timer = ATK[type].t; this.hasHit = false;
+  }
+  hit(dmg, dir) {
+    this.hp = Math.max(0, this.hp - dmg);
+    this.state = 'hit'; this.timer = 14; this.invuln = 26; this.flash = 8;
+    this.vx = dir * 5;
+  }
+  step(inp, enemy) {
+    if (this.invuln > 0) this.invuln--;
+    if (this.flash > 0) this.flash--;
+    if (this.timer > 0 && --this.timer === 0) this.state = 'idle';
 
-        if (this.attackBox && !this.hasHit) {
-          if (checkCollision(this.attackBox, enemy)) {
-            enemy.takeDamage(this.attackBox.damage);
-            this.hasHit = true;
-          }
-        }
-      }
-
-      attack(type) {
-        if (this.stateTimer > 0) return;
-        this.state = type;
-        this.hasHit = false;
-
-        if (type === 'punch') {
-          this.stateTimer = 18;
-          this.attackBox = { x: this.facing === 1 ? this.x + 10 : this.x - 60, y: this.y - 85, w: 50, h: 25, damage: 8 };
-        } else if (type === 'kick') {
-          this.stateTimer = 22;
-          this.attackBox = { x: this.facing === 1 ? this.x + 10 : this.x - 70, y: this.y - 55, w: 60, h: 30, damage: 12 };
-        } else if (type === 'weapon') {
-          this.stateTimer = 28;
-          this.attackBox = { x: this.facing === 1 ? this.x + 10 : this.x - 90, y: this.y - 95, w: 80, h: 40, damage: 18 };
-        }
-      }
-
-      takeDamage(amount) {
-        this.hp = Math.max(0, this.hp - amount);
-        this.state = 'hit';
-        this.stateTimer = 12;
-        this.vx = -this.facing * 4;
-      }
-
-      draw(ctx) {
-        ctx.save();
-        ctx.translate(this.x, this.y);
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
-        ctx.beginPath();
-        ctx.ellipse(0, 0, 30, 8, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = '#111';
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 3;
-        ctx.scale(this.facing, 1);
-
-        ctx.beginPath();
-        if (this.state === 'crouch') {
-          ctx.ellipse(0, -35, 18, 25, 0, 0, Math.PI * 2);
-        } else {
-          ctx.ellipse(0, -65, 16, 32, 0, 0, Math.PI * 2);
-        }
-        ctx.fill();
-
-        ctx.beginPath();
-        const headY = this.state === 'crouch' ? -65 : -105;
-        ctx.arc(0, headY, 13, 0, Math.PI * 2);
-        ctx.fill();
-
-        ctx.fillStyle = this.isP1 ? '#d4af37' : '#3b82f6';
-        ctx.fillRect(-8, headY - 14, 16, 4);
-
-        ctx.fillStyle = '#111';
-        ctx.lineWidth = 8;
-        ctx.lineCap = 'round';
-        ctx.beginPath();
-        if (this.state === 'crouch') {
-          ctx.moveTo(-5, -30); ctx.lineTo(-20, -10); ctx.lineTo(-22, 0);
-          ctx.moveTo(5, -30); ctx.lineTo(20, -10); ctx.lineTo(22, 0);
-        } else if (!this.isGrounded) {
-          ctx.moveTo(-5, -45); ctx.lineTo(-18, -25);
-          ctx.moveTo(5, -45); ctx.lineTo(12, -15);
-        } else {
-          ctx.moveTo(-5, -40); ctx.lineTo(-12, 0);
-          ctx.moveTo(5, -40); ctx.lineTo(15, 0);
-        }
-        ctx.stroke();
-
-        ctx.beginPath();
-        if (this.state === 'punch') {
-          ctx.moveTo(-5, -75); ctx.lineTo(35, -75);
-        } else if (this.state === 'kick') {
-          ctx.moveTo(0, -40); ctx.lineTo(40, -45);
-        } else if (this.state === 'weapon') {
-          ctx.moveTo(-5, -70); ctx.lineTo(25, -90);
-          ctx.strokeStyle = '#60a5fa';
-          ctx.lineWidth = 4;
-          ctx.beginPath();
-          ctx.arc(10, -70, 50, -Math.PI / 4, Math.PI / 4);
-          ctx.stroke();
-        } else {
-          ctx.moveTo(-5, -70); ctx.lineTo(12, -80);
-          ctx.moveTo(5, -70); ctx.lineTo(18, -65);
-        }
-        ctx.stroke();
-        ctx.restore();
-      }
+    if (this.state === 'hit') this.vx *= 0.85;
+    else if (this.attacking) this.vx *= 0.8;
+    else {
+      const crouch = inp.d && this.grounded;
+      this.vx = crouch ? 0 : ((inp.r ? 1 : 0) - (inp.l ? 1 : 0)) * 5.5;
+      if (inp.u && this.grounded) this.vy = -14;
+      this.state = crouch ? 'crouch' : 'idle';
+      if (inp.atk) this.attack(inp.atk);
+      this.facing = this.x <= enemy.x ? 1 : -1;
     }
 
-    function checkCollision(rect1, rect2) {
-      const p2Box = { x: rect2.x - 20, y: rect2.y - 100, w: 40, h: 100 };
-      return (
-        rect1.x < p2Box.x + p2Box.w &&
-        rect1.x + rect1.w > p2Box.x &&
-        rect1.y < p2Box.y + p2Box.h &&
-        rect1.y + rect1.h > p2Box.y
-      );
-    }
+    this.vy += 0.65; this.x += this.vx; this.y += this.vy;
+    if (this.y >= GROUND) { this.y = GROUND; this.vy = 0; this.grounded = true; } else this.grounded = false;
+    this.x = Math.max(30, Math.min(W - 30, this.x));
 
-    const player1 = new Fighter(250, '#d4af37', true);
-    const player2 = new Fighter(750, '#3b82f6', false);
-
-    function drawBackground() {
-      const skyGradient = ctx.createLinearGradient(0, 0, 0, GAME_HEIGHT);
-      skyGradient.addColorStop(0, '#0a150d');
-      skyGradient.addColorStop(0.6, '#132e1b');
-      skyGradient.addColorStop(1, '#1c3d25');
-      ctx.fillStyle = skyGradient;
-      ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-
-      ctx.fillStyle = 'rgba(255, 250, 220, 0.85)';
-      ctx.beginPath();
-      ctx.arc(500, 140, 70, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = 'rgba(255, 250, 220, 0.08)';
-      ctx.beginPath();
-      ctx.arc(500, 140, 120, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.fillStyle = 'rgba(10, 25, 15, 0.6)';
-      for (let i = 0; i < GAME_WIDTH; i += 35) {
-        ctx.fillRect(i, 80, 8, GAME_HEIGHT - 80);
-      }
-
-      ctx.fillStyle = '#061209';
-      for (let i = 15; i < GAME_WIDTH; i += 70) {
-        ctx.fillRect(i, 0, 14, GROUND_Y);
-        for (let j = 40; j < GROUND_Y; j += 60) {
-          ctx.fillRect(i - 2, j, 18, 3);
-        }
-      }
-
-      ctx.fillStyle = '#050a06';
-      ctx.fillRect(0, GROUND_Y, GAME_WIDTH, GAME_HEIGHT - GROUND_Y);
-      ctx.fillStyle = '#0f2614';
-      ctx.fillRect(0, GROUND_Y, GAME_WIDTH, 4);
-    }
-
-    function gameLoop() {
-      ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
-      drawBackground();
-
-      if (!isGameOver) {
-        player1.update(player2);
-        player2.update(player1);
-
-        if (gameMode === 'OFFLINE' && Math.random() < 0.03) {
-          const dist = Math.abs(player1.x - player2.x);
-          if (dist > 100) {
-            player2.vx = player1.x < player2.x ? -3 : 3;
-          } else {
-            player2.vx = 0;
-            const attacks = ['punch', 'kick', 'weapon'];
-            player2.attack(attacks[Math.floor(Math.random() * attacks.length)]);
-          }
-        }
-
-        if (player1.hp <= 0 || player2.hp <= 0 || timer <= 0) {
-          endGame();
-        }
-
-        if (gameMode === 'PVP_HOST') {
-          broadcastGameState();
-        }
-      }
-
-      player1.draw(ctx);
-      player2.draw(ctx);
-
-      document.getElementById('p1HpBar').style.width = player1.hp + '%';
-      document.getElementById('p2HpBar').style.width = player2.hp + '%';
-      document.getElementById('p1HpNum').innerText = Math.ceil(player1.hp) + ' HP';
-      document.getElementById('p2HpNum').innerText = Math.ceil(player2.hp) + ' HP';
-
-      requestAnimationFrame(gameLoop);
-    }
-
-    function startGame() {
-      isGameOver = false;
-      timer = 99;
-      player1.reset(250);
-      player2.reset(750);
-
-      document.getElementById('mainMenu').classList.add('hidden');
-      document.getElementById('gameHud').classList.remove('hidden');
-      document.getElementById('touchControls').classList.remove('hidden');
-      document.getElementById('gameStatusModal').classList.add('hidden');
-
-      if (timerInterval) clearInterval(timerInterval);
-      timerInterval = setInterval(() => {
-        if (timer > 0 && !isGameOver) {
-          timer--;
-          document.getElementById('timerText').innerText = timer;
-        }
-      }, 1000);
-    }
-
-    function endGame() {
-      isGameOver = true;
-      clearInterval(timerInterval);
-
-      let winnerText = "HOÀ NHAU!";
-      let descText = "Cả hai cao thủ đồng sức đồng tài.";
-
-      if (player1.hp > player2.hp) {
-        winnerText = `${playerName.toUpperCase()} CHIẾN THẮNG!`;
-        descText = "Đối thủ đã bị gục ngã dưới lưỡi kiếm.";
-      } else if (player2.hp > player1.hp) {
-        winnerText = "NINJA (P2) CHIẾN THẮNG!";
-        descText = "Tuyệt kỹ Ninja đã làm chủ trận đấu.";
-      }
-
-      document.getElementById('statusTitle').innerText = winnerText;
-      document.getElementById('statusDesc').innerText = descText;
-      document.getElementById('gameStatusModal').classList.remove('hidden');
-    }
-
-    function setupRealtimeRoom(code, isHost) {
-      roomCode = code;
-      gameMode = isHost ? 'PVP_HOST' : 'PVP_GUEST';
-      document.getElementById('roomTag').innerText = `Phòng: ${roomCode}`;
-
-      realtimeChannel = supabase.channel(`room_${roomCode}`, {
-        config: { broadcast: { ack: false, self: false } }
-      });
-
-      realtimeChannel
-        .on('broadcast', { event: 'p2_input' }, (payload) => {
-          if (gameMode === 'PVP_HOST' && payload.data) {
-            const cmd = payload.data;
-            if (cmd.type === 'move') player2.vx = cmd.vx;
-            if (cmd.type === 'jump' && player2.isGrounded) player2.vy = player2.jumpForce;
-            if (cmd.type === 'attack') player2.attack(cmd.attackType);
-          }
-        })
-        .on('broadcast', { event: 'game_state' }, (payload) => {
-          if (gameMode === 'PVP_GUEST' && payload.data) {
-            const state = payload.data;
-            player1.x = state.p1.x; player1.y = state.p1.y; player1.hp = state.p1.hp; player1.state = state.p1.state; player1.facing = state.p1.facing;
-            player2.x = state.p2.x; player2.y = state.p2.y; player2.hp = state.p2.hp; player2.state = state.p2.state; player2.facing = state.p2.facing;
-            timer = state.timer;
-            document.getElementById('timerText').innerText = timer;
-          }
-        })
-        .subscribe((status) => {
-          if (status === 'SUBSCRIBED') { startGame(); }
-        });
-    }
-
-    function broadcastGameState() {
-      if (realtimeChannel && gameMode === 'PVP_HOST') {
-        realtimeChannel.send({
-          type: 'broadcast',
-          event: 'game_state',
-          data: {
-            p1: { x: player1.x, y: player1.y, hp: player1.hp, state: player1.state, facing: player1.facing },
-            p2: { x: player2.x, y: player2.y, hp: player2.hp, state: player2.state, facing: player2.facing },
-            timer: timer
-          }
-        });
+    // hit detection (4 frame startup)
+    if (this.attacking && !this.hasHit && this.dur - this.timer >= 4 && enemy.invuln === 0) {
+      const a = ATK[this.state];
+      const box = { x: this.facing === 1 ? this.x + 10 : this.x - 10 - a.w, y: this.y - a.oy, w: a.w, h: a.h };
+      const e = enemy.hurtbox();
+      if (box.x < e.x + e.w && box.x + box.w > e.x && box.y < e.y + e.h && box.y + box.h > e.y) {
+        enemy.hit(a.dmg, this.facing); this.hasHit = true;
       }
     }
-
-    function sendGuestInput(cmd) {
-      if (realtimeChannel && gameMode === 'PVP_GUEST') {
-        realtimeChannel.send({ type: 'broadcast', event: 'p2_input', data: cmd });
-      }
+  }
+  draw() {
+    const c = ctx, crouch = this.state === 'crouch';
+    const body = this.flash % 2 === 1 ? '#fff' : (this.isP1 ? '#1d1d1d' : '#18223f');
+    const accent = this.isP1 ? '#d4af37' : '#3b82f6';
+    c.save(); c.translate(this.x, this.y);
+    c.fillStyle = 'rgba(0,0,0,.4)'; c.beginPath(); c.ellipse(0, 0, 30, 8, 0, 0, 7); c.fill();
+    c.scale(this.facing, 1);
+    c.shadowColor = accent; c.shadowBlur = 8;
+    c.fillStyle = body; c.strokeStyle = body; c.lineCap = 'round';
+    c.beginPath(); crouch ? c.ellipse(0, -35, 18, 25, 0, 0, 7) : c.ellipse(0, -65, 16, 32, 0, 0, 7); c.fill();
+    const hy = crouch ? -65 : -105;
+    c.beginPath(); c.arc(0, hy, 13, 0, 7); c.fill();
+    c.shadowBlur = 0; c.fillStyle = accent; c.fillRect(-9, hy - 6, 18, 4);
+    c.lineWidth = 8; c.beginPath();
+    if (crouch) { c.moveTo(-5,-30); c.lineTo(-20,-10); c.lineTo(-22,0); c.moveTo(5,-30); c.lineTo(20,-10); c.lineTo(22,0); }
+    else if (!this.grounded) { c.moveTo(-5,-45); c.lineTo(-18,-25); c.moveTo(5,-45); c.lineTo(12,-15); }
+    else { c.moveTo(-5,-40); c.lineTo(-12,0); c.moveTo(5,-40); c.lineTo(15,0); }
+    c.stroke();
+    c.beginPath();
+    if (this.state === 'punch') { c.moveTo(-5,-75); c.lineTo(38,-75); }
+    else if (this.state === 'kick') { c.moveTo(0,-40); c.lineTo(45,-45); }
+    else if (this.state === 'weapon') {
+      c.moveTo(-5,-70); c.lineTo(28,-92); c.stroke();
+      c.strokeStyle = '#60a5fa'; c.lineWidth = 4; c.beginPath(); c.arc(10,-70,55,-0.8,0.8);
     }
+    else if (this.state === 'hit') { c.moveTo(-5,-70); c.lineTo(-18,-60); c.moveTo(5,-70); c.lineTo(-10,-55); }
+    else { c.moveTo(-5,-70); c.lineTo(12,-80); c.moveTo(5,-70); c.lineTo(18,-65); }
+    c.stroke(); c.restore();
+  }
+}
+const p1 = new Fighter(true), p2 = new Fighter(false);
 
-    // Controls
-    const keys = {};
-    window.addEventListener('keydown', (e) => { keys[e.key.toLowerCase()] = true; handleInput(); });
-    window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; handleInput(); });
+// ================= INPUT =================
+const keys = {}, touch = { l:0, r:0, u:0, d:0 }, atkQ = { p1:null, p2:null };
+const K = k => !!keys[k];
 
-    function handleInput() {
-      if (isGameOver) return;
-      if (gameMode === 'OFFLINE' || gameMode === 'PVP_HOST') {
-        if (keys['a']) player1.vx = -player1.speed;
-        else if (keys['d']) player1.vx = player1.speed;
-        else player1.vx = 0;
-        if (keys['w'] && player1.isGrounded) player1.vy = player1.jumpForce;
-        if (keys['s']) player1.state = 'crouch';
-        if (keys['j']) player1.attack('punch');
-        if (keys['k']) player1.attack('kick');
-        if (keys['u']) player1.attack('weapon');
-      }
+function p1Input() {
+  const two = mode === 'LOCAL2P';
+  const inp = {
+    l: K('a') || (!two && K('arrowleft')) || touch.l,
+    r: K('d') || (!two && K('arrowright')) || touch.r,
+    u: K('w') || (!two && K('arrowup')) || touch.u,
+    d: K('s') || (!two && K('arrowdown')) || touch.d,
+    atk: atkQ.p1
+  };
+  atkQ.p1 = null; return inp;
+}
+function p2LocalInput() {
+  const inp = { l:K('arrowleft'), r:K('arrowright'), u:K('arrowup'), d:K('arrowdown'), atk:atkQ.p2 };
+  atkQ.p2 = null; return inp;
+}
+window.addEventListener('keydown', e => {
+  const k = e.key.toLowerCase();
+  if (k.startsWith('arrow') || k === ' ') e.preventDefault();
+  if (e.repeat) return;
+  keys[k] = true;
+  const two = mode === 'LOCAL2P';
+  if (k === 'j' || (!two && k === '1')) atkQ.p1 = 'punch';
+  if (k === 'k' || (!two && k === '2')) atkQ.p1 = 'kick';
+  if (k === 'u' || (!two && k === '3')) atkQ.p1 = 'weapon';
+  if (two) { if (k === '1') atkQ.p2 = 'punch'; if (k === '2') atkQ.p2 = 'kick'; if (k === '3') atkQ.p2 = 'weapon'; }
+});
+window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+window.addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 
-      if (gameMode === 'OFFLINE') {
-        if (keys['arrowleft']) player2.vx = -player2.speed;
-        else if (keys['arrowright']) player2.vx = player2.speed;
-        else player2.vx = 0;
-        if (keys['arrowup'] && player2.isGrounded) player2.vy = player2.jumpForce;
-        if (keys['1']) player2.attack('punch');
-        if (keys['2']) player2.attack('kick');
-        if (keys['3']) player2.attack('weapon');
-      } else if (gameMode === 'PVP_GUEST') {
-        let vx = 0;
-        if (keys['a'] || keys['arrowleft']) vx = -player2.speed;
-        if (keys['d'] || keys['arrowright']) vx = player2.speed;
-        sendGuestInput({ type: 'move', vx: vx });
-        if (keys['w'] || keys['arrowup']) sendGuestInput({ type: 'jump' });
-        if (keys['j'] || keys['1']) sendGuestInput({ type: 'attack', attackType: 'punch' });
-        if (keys['k'] || keys['2']) sendGuestInput({ type: 'attack', attackType: 'kick' });
-        if (keys['u'] || keys['3']) sendGuestInput({ type: 'attack', attackType: 'weapon' });
-      }
+// Joystick (pointer events)
+const joy = $('joy'), thumb = $('thumb');
+let joyPtr = null;
+function joyMove(e) {
+  const r = joy.getBoundingClientRect();
+  let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+  const m = r.width * 0.33, d = Math.hypot(dx, dy);
+  if (d > m) { dx = dx / d * m; dy = dy / d * m; }
+  thumb.style.transform = `translate(${dx}px,${dy}px)`;
+  touch.l = dx < -12 ? 1 : 0; touch.r = dx > 12 ? 1 : 0;
+  touch.u = dy < -22 ? 1 : 0; touch.d = dy > 22 ? 1 : 0;
+}
+function joyEnd() { joyPtr = null; thumb.style.transform = ''; touch.l = touch.r = touch.u = touch.d = 0; }
+joy.addEventListener('pointerdown', e => { e.preventDefault(); joyPtr = e.pointerId; joy.setPointerCapture(e.pointerId); joyMove(e); });
+joy.addEventListener('pointermove', e => { if (e.pointerId === joyPtr) joyMove(e); });
+joy.addEventListener('pointerup', e => { if (e.pointerId === joyPtr) joyEnd(); });
+joy.addEventListener('pointercancel', joyEnd);
+[['bPunch','punch'],['bKick','kick'],['bWeapon','weapon']].forEach(([id, t]) =>
+  $(id).addEventListener('pointerdown', e => { e.preventDefault(); atkQ.p1 = t; }));
+
+// ================= GAME FLOW =================
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.remove('hidden');
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.add('hidden'), 2500);
+}
+function show(id, v) { $(id).classList.toggle('hidden', !v); }
+
+function startGame() {
+  p1.reset(); p2.reset(); timer = 99; ticks = 0; over = false; running = true;
+  remote = { l:0, r:0, u:0, d:0, atk:null }; atkQ.p1 = atkQ.p2 = null;
+  const mine = playerName.toUpperCase(), opp = oppName.toUpperCase();
+  $('n1').textContent = (mode === 'GUEST' ? opp : mine) + ' (P1)';
+  $('n2').textContent = (mode === 'GUEST' ? mine : mode === 'AI' ? 'MÁY' : mode === 'LOCAL2P' ? 'NGƯỜI CHƠI 2' : opp) + ' (P2)';
+  $('roomTag').textContent = roomCode ? 'Phòng ' + roomCode : mode === 'AI' ? 'Đấu máy' : '2 người';
+  $('timer').textContent = timer;
+  show('menu', false); show('wait', false); show('result', false);
+  show('hud', true); show('touch', true);
+  $('btnRematch').classList.toggle('hidden', mode === 'GUEST');
+}
+
+function endGame(fromRemote) {
+  if (over) return;
+  over = true; running = false;
+  let title = 'HOÀ NHAU!', desc = 'Hai cao thủ đồng sức đồng tài.';
+  const n1 = mode === 'GUEST' ? oppName : playerName;
+  const n2 = mode === 'AI' ? 'Máy' : mode === 'LOCAL2P' ? 'Người chơi 2' : mode === 'GUEST' ? playerName : oppName;
+  if (p1.hp > p2.hp) { title = n1.toUpperCase() + ' THẮNG!'; desc = 'Đối thủ đã gục ngã.'; }
+  else if (p2.hp > p1.hp) { title = n2.toUpperCase() + ' THẮNG!'; desc = 'Tuyệt kỹ bóng đêm làm chủ trận đấu.'; }
+  $('resTitle').textContent = title; $('resDesc').textContent = desc;
+  show('result', true);
+  if (mode === 'GUEST') $('btnRematch').classList.add('hidden');
+}
+
+function cleanup() {
+  running = false; over = false; clearInterval(joinTimer); joinTimer = null;
+  if (channel) { try { channel.send({ type:'broadcast', event:'leave', payload:{ id:myId } }); } catch (e) {} sb.removeChannel(channel); channel = null; }
+  roomCode = null; guestId = null; guestJoined = false; mode = 'MENU'; lastSent = '';
+}
+function toMenu() {
+  cleanup();
+  ['hud','touch','wait','result'].forEach(i => show(i, false));
+  show('menu', true); show('nameBox', false); show('modeBox', true);
+}
+
+// ================= AI =================
+function aiInput() {
+  const inp = { l:0, r:0, u:0, d:0, atk:null };
+  const dx = p1.x - p2.x, dist = Math.abs(dx);
+  if (p2.attacking || p2.state === 'hit') return inp;
+  if (dist > 95) { if (dx < 0) inp.l = 1; else inp.r = 1; }
+  else if (dist < 55 && Math.random() < 0.05) { if (dx < 0) inp.r = 1; else inp.l = 1; }
+  else if (Math.random() < 0.05) inp.atk = ['punch','kick','weapon'][Math.random() * 3 | 0];
+  if (Math.random() < 0.004) inp.u = 1;
+  if (p1.attacking && dist < 110 && Math.random() < 0.08) inp.d = 1;
+  return inp;
+}
+
+// ================= SIM LOOP =================
+function simulate() {
+  if (mode === 'GUEST') {
+    for (const p of [p1, p2]) { p.x += (p.tx - p.x) * 0.4; p.y += (p.ty - p.y) * 0.4; }
+    sendGuestInput();
+    return;
+  }
+  const i1 = p1Input();
+  const i2 = mode === 'AI' ? aiInput() : mode === 'LOCAL2P' ? p2LocalInput() : remote;
+  p1.step(i1, p2); p2.step(i2, p1);
+  if (mode === 'HOST') remote.atk = null;
+
+  if (++ticks % 60 === 0 && timer > 0) timer--;
+  if (p1.hp <= 0 || p2.hp <= 0 || timer <= 0) endGame();
+  if (mode === 'HOST' && ticks % 3 === 0) broadcastState();
+}
+
+function broadcastState() {
+  if (!channel) return;
+  const f = p => [Math.round(p.x), Math.round(p.y), p.hp, p.state, p.facing, p.flash, p.grounded ? 1 : 0];
+  channel.send({ type:'broadcast', event:'state', payload:{ a:f(p1), b:f(p2), t:timer, o:over ? 1 : 0 } });
+}
+function applyState(s) {
+  [[p1, s.a], [p2, s.b]].forEach(([p, a]) => {
+    p.tx = a[0]; p.ty = a[1]; p.hp = a[2]; p.state = a[3]; p.facing = a[4]; p.flash = a[5]; p.grounded = !!a[6];
+  });
+  timer = s.t;
+  if (s.o) { p1.x = p1.tx; p2.x = p2.tx; endGame(true); }
+}
+function sendGuestInput() {
+  if (!channel) return;
+  const inp = p1Input();
+  const msg = { l:+!!inp.l, r:+!!inp.r, u:+!!inp.u, d:+!!inp.d, atk:inp.atk };
+  const sig = JSON.stringify([msg.l, msg.r, msg.u, msg.d]);
+  if (inp.atk || sig !== lastSent || ticks++ % 6 === 0) {
+    lastSent = sig;
+    channel.send({ type:'broadcast', event:'input', payload:{ id:myId, ...msg } });
+  }
+}
+
+// ================= REALTIME =================
+function openChannel(code) {
+  roomCode = code;
+  channel = sb.channel('sf_room_' + code, { config:{ broadcast:{ self:false, ack:false } } });
+
+  channel.on('broadcast', { event:'join' }, ({ payload }) => {
+    if (mode !== 'HOST') return;
+    if (!guestId || guestId === payload.id) {
+      guestId = payload.id; oppName = payload.name || 'Đối thủ';
+      channel.send({ type:'broadcast', event:'start', payload:{ to:guestId, name:playerName } });
+      if (!guestJoined) { guestJoined = true; startGame(); }
+    } else {
+      channel.send({ type:'broadcast', event:'full', payload:{ to:payload.id } });
     }
-
-    const joystickBase = document.getElementById('joystickBase');
-    const joystickThumb = document.getElementById('joystickThumb');
-    let touchId = null;
-
-    joystickBase.addEventListener('touchstart', (e) => {
-      e.preventDefault();
-      const touch = e.changedTouches[0];
-      touchId = touch.identifier;
-      updateJoystick(touch);
-    });
-
-    window.addEventListener('touchmove', (e) => {
-      if (touchId === null) return;
-      for (let i = 0; i < e.changedTouches.length; i++) {
-        if (e.changedTouches[i].identifier === touchId) {
-          updateJoystick(e.changedTouches[i]);
-          break;
-        }
-      }
-    });
-
-    window.addEventListener('touchend', (e) => {
-      if (touchId === null) return;
-      for (let i = 0; i < e.changedTouches.length; i++) {
-        if (e.changedTouches[i].identifier === touchId) {
-          touchId = null;
-          joystickThumb.style.transform = `translate(0px, 0px)`;
-          if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'move', vx: 0 });
-          else player1.vx = 0;
-          break;
-        }
-      }
-    });
-
-    function updateJoystick(touch) {
-      const rect = joystickBase.getBoundingClientRect();
-      const centerX = rect.left + rect.width / 2;
-      const centerY = rect.top + rect.height / 2;
-      let dx = touch.clientX - centerX;
-      let dy = touch.clientY - centerY;
-      const maxRadius = 45;
-      const distance = Math.hypot(dx, dy);
-      if (distance > maxRadius) {
-        dx = (dx / distance) * maxRadius;
-        dy = (dy / distance) * maxRadius;
-      }
-      joystickThumb.style.transform = `translate(${dx}px, ${dy}px)`;
-      const activeFighter = (gameMode === 'PVP_GUEST') ? player2 : player1;
-
-      if (dx < -15) {
-        if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'move', vx: -activeFighter.speed });
-        else activeFighter.vx = -activeFighter.speed;
-      } else if (dx > 15) {
-        if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'move', vx: activeFighter.speed });
-        else activeFighter.vx = activeFighter.speed;
-      } else {
-        if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'move', vx: 0 });
-        else activeFighter.vx = 0;
-      }
-
-      if (dy < -25) {
-        if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'jump' });
-        else if (activeFighter.isGrounded) activeFighter.vy = activeFighter.jumpForce;
-      }
+  });
+  channel.on('broadcast', { event:'start' }, ({ payload }) => {
+    if (mode !== 'GUEST' || payload.to !== myId) return;
+    clearInterval(joinTimer); joinTimer = null;
+    oppName = payload.name || 'Chủ phòng';
+    if (!running || over) startGame();
+  });
+  channel.on('broadcast', { event:'full' }, ({ payload }) => {
+    if (mode === 'GUEST' && payload.to === myId) { toast('Phòng đã đủ người!'); toMenu(); }
+  });
+  channel.on('broadcast', { event:'input' }, ({ payload }) => {
+    if (mode !== 'HOST' || payload.id !== guestId) return;
+    remote.l = payload.l; remote.r = payload.r; remote.u = payload.u; remote.d = payload.d;
+    if (payload.atk) remote.atk = payload.atk;
+  });
+  channel.on('broadcast', { event:'state' }, ({ payload }) => { if (mode === 'GUEST' && running) applyState(payload); });
+  channel.on('broadcast', { event:'leave' }, ({ payload }) => {
+    if (payload.id === myId) return;
+    if (mode === 'HOST' && guestJoined) {
+      guestJoined = false; guestId = null; running = false; over = true;
+      $('resTitle').textContent = 'ĐỐI THỦ ĐÃ THOÁT'; $('resDesc').textContent = 'Bạn có thể quay lại menu và tạo phòng mới.';
+      $('btnRematch').classList.add('hidden'); show('result', true);
+    } else if (mode === 'GUEST') {
+      running = false; over = true;
+      $('resTitle').textContent = 'CHỦ PHÒNG ĐÃ THOÁT'; $('resDesc').textContent = 'Trận đấu kết thúc.';
+      show('result', true);
     }
+  });
+  return channel;
+}
 
-    document.getElementById('btnPunch').addEventListener('touchstart', (e) => { e.preventDefault(); if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'attack', attackType: 'punch' }); else player1.attack('punch'); });
-    document.getElementById('btnKick').addEventListener('touchstart', (e) => { e.preventDefault(); if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'attack', attackType: 'attack' }); else player1.attack('kick'); });
-    document.getElementById('btnWeapon').addEventListener('touchstart', (e) => { e.preventDefault(); if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'attack', attackType: 'weapon' }); else player1.attack('weapon'); });
+function createRoom() {
+  const code = String(1000 + Math.random() * 9000 | 0);
+  mode = 'HOST'; guestId = null; guestJoined = false;
+  openChannel(code).subscribe(status => {
+    if (status === 'SUBSCRIBED') {
+      $('waitCode').textContent = code; $('waitMsg').textContent = 'Đang chờ đối thủ...';
+      show('menu', false); show('wait', true);
+    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') { toast('Không kết nối được Supabase'); toMenu(); }
+  });
+}
+function joinRoom(code) {
+  mode = 'GUEST';
+  openChannel(code).subscribe(status => {
+    if (status === 'SUBSCRIBED') {
+      $('waitCode').textContent = code; $('waitMsg').textContent = 'Đang vào phòng...';
+      show('menu', false); show('wait', true);
+      let tries = 0;
+      const send = () => {
+        if (++tries > 6) { toast('Không tìm thấy phòng ' + code); toMenu(); return; }
+        channel.send({ type:'broadcast', event:'join', payload:{ id:myId, name:playerName } });
+      };
+      send(); joinTimer = setInterval(send, 1000);
+    } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') { toast('Không kết nối được Supabase'); toMenu(); }
+  });
+}
 
-    // UI XỬ LÝ NHẬP TÊN (ĐÃ SỬA LỖI HIỂN THỊ)
-    const inputNickname = document.getElementById('inputNickname');
-    const btnEnterGame = document.getElementById('btnEnterGame');
-    const btnChangeName = document.getElementById('btnChangeName');
-    const nicknameBox = document.getElementById('nicknameBox');
-    const gameModesBox = document.getElementById('gameModesBox');
+// ================= RENDER =================
+function drawBg() {
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, '#0a150d'); g.addColorStop(.6, '#132e1b'); g.addColorStop(1, '#1c3d25');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = 'rgba(255,250,220,.85)'; ctx.beginPath(); ctx.arc(500, 140, 70, 0, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(255,250,220,.08)'; ctx.beginPath(); ctx.arc(500, 140, 120, 0, 7); ctx.fill();
+  ctx.fillStyle = 'rgba(10,25,15,.6)';
+  for (let i = 0; i < W; i += 35) ctx.fillRect(i, 80, 8, H - 80);
+  ctx.fillStyle = '#061209';
+  for (let i = 15; i < W; i += 70) { ctx.fillRect(i, 0, 14, GROUND); for (let j = 40; j < GROUND; j += 60) ctx.fillRect(i - 2, j, 18, 3); }
+  ctx.fillStyle = '#050a06'; ctx.fillRect(0, GROUND, W, H - GROUND);
+  ctx.fillStyle = '#0f2614'; ctx.fillRect(0, GROUND, W, 4);
+}
+function render() {
+  drawBg(); p1.draw(); p2.draw();
+  $('b1').style.width = p1.hp + '%'; $('b2').style.width = p2.hp + '%';
+  $('h1').textContent = Math.ceil(p1.hp); $('h2').textContent = Math.ceil(p2.hp);
+  $('timer').textContent = timer;
+}
+let last = performance.now(), acc = 0;
+function frame(now) {
+  acc += Math.min(now - last, 100); last = now;
+  while (acc >= DT) { if (running && !over) simulate(); acc -= DT; }
+  render(); requestAnimationFrame(frame);
+}
 
-    const savedName = localStorage.getItem('shadow_nickname');
-    if (savedName) {
-      inputNickname.value = savedName;
-    }
+// ================= UI =================
+const saved = localStorage.getItem('shadow_nickname');
+if (saved) $('inName').value = saved;
+$('btnEnter').onclick = () => {
+  const n = $('inName').value.trim();
+  if (!n) return toast('Vui lòng nhập tên!');
+  playerName = n; localStorage.setItem('shadow_nickname', n);
+  $('dispName').textContent = n; show('nameBox', false); show('modeBox', true);
+};
+$('inName').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnEnter').click(); });
+$('btnRename').onclick = () => { show('modeBox', false); show('nameBox', true); };
+$('btnAI').onclick = () => { mode = 'AI'; roomCode = null; oppName = 'Máy'; startGame(); };
+$('btn2P').onclick = () => { mode = 'LOCAL2P'; roomCode = null; oppName = 'Người chơi 2'; startGame(); };
+$('btnCreate').onclick = createRoom;
+$('btnJoin').onclick = () => {
+  const c = $('inRoom').value.trim();
+  if (!/^\d{4}$/.test(c)) return toast('Nhập mã phòng 4 số!');
+  joinRoom(c);
+};
+$('btnCancel').onclick = toMenu;
+$('btnMenu').onclick = toMenu;
+$('btnRematch').onclick = () => {
+  if (mode === 'HOST') {
+    if (!guestJoined) return;
+    startGame(); channel.send({ type:'broadcast', event:'start', payload:{ to:guestId, name:playerName } });
+  } else startGame();
+};
 
-    btnEnterGame.addEventListener('click', () => {
-      const name = inputNickname.value.trim();
-      if (!name) {
-        alert("Vui lòng nhập tên của bạn!");
-        return;
-      }
-      playerName = name;
-      localStorage.setItem('shadow_nickname', name);
-      document.getElementById('userDisplayName').innerText = name;
-      document.getElementById('p1NameLabel').innerText = `${name.toUpperCase()} (P1)`;
-
-      nicknameBox.classList.add('hidden');
-      gameModesBox.classList.remove('hidden');
-    });
-
-    btnChangeName.addEventListener('click', () => {
-      gameModesBox.classList.add('hidden');
-      nicknameBox.classList.remove('hidden');
-    });
-
-    document.getElementById('btnOfflineMode').addEventListener('click', () => {
-      gameMode = 'OFFLINE';
-      document.getElementById('roomTag').innerText = "Offline";
-      startGame();
-    });
-
-    document.getElementById('btnCreateRoom').addEventListener('click', () => {
-      const randomCode = Math.floor(1000 + Math.random() * 9000).toString();
-      setupRealtimeRoom(randomCode, true);
-    });
-
-    document.getElementById('btnJoinRoom').addEventListener('click', () => {
-      const code = document.getElementById('inputRoomCode').value.trim();
-      if (code.length !== 4) { alert("Nhập mã phòng 4 số!"); return; }
-      setupRealtimeRoom(code, false);
-    });
-
-    document.getElementById('btnBackToMenu').addEventListener('click', () => {
-      document.getElementById('gameStatusModal').classList.add('hidden');
-      document.getElementById('gameHud').classList.add('hidden');
-      document.getElementById('touchControls').classList.add('hidden');
-      document.getElementById('mainMenu').classList.remove('hidden');
-      gameModesBox.classList.remove('hidden');
-      nicknameBox.classList.add('hidden');
-      if (realtimeChannel) supabase.removeChannel(realtimeChannel);
-    });
-
-    requestAnimationFrame(gameLoop);
-  </script>
+requestAnimationFrame(frame);
+</script>
 </body>
 </html>
