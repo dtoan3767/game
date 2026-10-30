@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Shadow Fight Online PvP - Supabase Edition</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Supabase JS Client -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * {
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+    body {
+      margin: 0;
+      background-color: #050b07;
+      color: #fff;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      overflow: hidden;
+    }
+    /* Giao diện thanh máu & khung avatar */
+    .avatar-frame {
+      border: 3px solid #d4af37;
+      box-shadow: 0 0 15px rgba(212, 175, 55, 0.4);
+    }
+    .hp-bar-fill {
+      transition: width 0.1s ease-out;
+    }
+    /* Joystick Custom CSS */
+    .joystick-base {
+      background: radial-gradient(circle, rgba(40,60,45,0.7) 0%, rgba(10,20,15,0.85) 100%);
+      border: 3px solid rgba(180, 220, 190, 0.4);
+      box-shadow: 0 0 15px rgba(0,0,0,0.8), inset 0 0 10px rgba(100,200,120,0.2);
+    }
+    .joystick-thumb {
+      background: radial-gradient(circle, #e67e22 0%, #d35400 70%, #a04000 100%);
+      border: 2px solid #f39c12;
+      box-shadow: 0 0 10px rgba(230, 126, 34, 0.8);
+    }
+    .btn-action {
+      background: radial-gradient(circle, rgba(50,60,70,0.8) 0%, rgba(20,25,30,0.9) 100%);
+      border: 2px solid rgba(255,255,255,0.3);
+      box-shadow: 0 4px 6px rgba(0,0,0,0.5);
+    }
+    .btn-action:active {
+      transform: scale(0.92);
+      border-color: #e67e22;
+      background: radial-gradient(circle, rgba(80,70,50,0.9) 0%, rgba(40,30,20,0.95) 100%);
+    }
+    /* Modal style */
+    .glass-panel {
+      background: rgba(15, 25, 20, 0.85);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(212, 175, 55, 0.3);
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen">
+
+  <!-- UI OVERLAY MAIN GAME CONTAINER -->
+  <div class="relative w-full max-w-[1000px] h-[100vh] max-h-[562.5px] bg-black overflow-hidden shadow-2xl rounded-none md:rounded-lg">
+    
+    <!-- CANVAS GAME -->
+    <canvas id="gameCanvas" width="1000" height="562" class="w-full h-full block bg-black"></canvas>
+
+    <!-- TOP HUD GAME (MÁU, TÊN, THỜI GIAN) -->
+    <div id="gameHud" class="absolute top-0 left-0 right-0 p-3 flex justify-between items-start pointer-events-none hidden">
+      <!-- P1 HUD (SHADOW) -->
+      <div class="flex items-center gap-2 w-[42%]">
+        <div class="w-14 h-14 rounded-full bg-neutral-800 avatar-frame flex-shrink-0 flex items-center justify-center overflow-hidden">
+          <span class="text-2xl font-bold text-amber-500">🥷</span>
+        </div>
+        <div class="flex-1">
+          <div class="flex justify-between items-center mb-1">
+            <span id="p1NameLabel" class="text-xs font-bold tracking-widest text-amber-400 drop-shadow">SHADOW (P1)</span>
+            <span id="p1HpNum" class="text-xs font-bold text-amber-200">100 HP</span>
+          </div>
+          <div class="w-full bg-red-950 h-4 rounded border border-amber-900 overflow-hidden relative">
+            <div id="p1HpBar" class="h-full bg-gradient-to-r from-red-600 via-amber-500 to-green-500 hp-bar-fill w-full"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TIMER & MATCH INFO -->
+      <div class="flex flex-col items-center justify-center w-[12%]">
+        <div class="w-12 h-12 rounded-full bg-stone-900 border-2 border-amber-500 flex items-center justify-center text-amber-400 font-extrabold text-xl shadow-lg">
+          <span id="timerText">99</span>
+        </div>
+        <span id="roomTag" class="text-[10px] text-amber-300 font-mono mt-1 bg-stone-900/80 px-2 py-0.5 rounded border border-amber-500/30">Lobby</span>
+      </div>
+
+      <!-- P2 HUD (NINJA) -->
+      <div class="flex items-center gap-2 w-[42%] flex-row-reverse">
+        <div class="w-14 h-14 rounded-full bg-neutral-800 avatar-frame flex-shrink-0 flex items-center justify-center overflow-hidden">
+          <span class="text-2xl font-bold text-amber-500">⚔️</span>
+        </div>
+        <div class="flex-1 text-right">
+          <div class="flex justify-between items-center mb-1 flex-row-reverse">
+            <span id="p2NameLabel" class="text-xs font-bold tracking-widest text-amber-400 drop-shadow">NINJA (P2)</span>
+            <span id="p2HpNum" class="text-xs font-bold text-amber-200">100 HP</span>
+          </div>
+          <div class="w-full bg-red-950 h-4 rounded border border-amber-900 overflow-hidden relative flex justify-end">
+            <div id="p2HpBar" class="h-full bg-gradient-to-l from-red-600 via-amber-500 to-green-500 hp-bar-fill w-full"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOUCH CONTROLS (CHO MOBILE) -->
+    <div id="touchControls" class="absolute bottom-4 left-0 right-0 px-6 flex justify-between items-end pointer-events-auto hidden">
+      <!-- D-PAD / JOYSTICK TRÁI -->
+      <div id="joystickBase" class="w-36 h-36 rounded-full joystick-base relative flex items-center justify-center touch-none">
+        <div class="absolute inset-0 flex items-center justify-between px-2 text-stone-500 text-xs font-bold pointer-events-none">
+          <span>◀</span><span>▶</span>
+        </div>
+        <div class="absolute inset-0 flex flex-col items-center justify-between py-2 text-stone-500 text-xs font-bold pointer-events-none">
+          <span>▲</span><span>▼</span>
+        </div>
+        <div id="joystickThumb" class="w-14 h-14 rounded-full joystick-thumb absolute pointer-events-none transition-transform duration-75"></div>
+      </div>
+
+      <!-- CÁC NÚT TẤN CÔNG BÊN PHẢI -->
+      <div class="relative w-44 h-44 pointer-events-auto">
+        <!-- Punch (Đấm) -->
+        <button id="btnPunch" class="absolute bottom-2 right-2 w-16 h-16 rounded-full btn-action flex items-center justify-center text-2xl active:scale-95">👊</button>
+        <!-- Kick (Đá) -->
+        <button id="btnKick" class="absolute bottom-2 right-20 w-14 h-14 rounded-full btn-action flex items-center justify-center text-xl active:scale-95">🦶</button>
+        <!-- Weapon / Skill (Kiếm) -->
+        <button id="btnWeapon" class="absolute bottom-20 right-2 w-14 h-14 rounded-full btn-action flex items-center justify-center text-xl active:scale-95">⚔️</button>
+        <!-- Special / Magic -->
+        <button id="btnSpecial" class="absolute bottom-16 right-16 w-12 h-12 rounded-full btn-action flex items-center justify-center text-lg active:scale-95">🔥</button>
+      </div>
+    </div>
+
+    <!-- MENU CHÍNH / MODAL AUTH & MATCHMAKING -->
+    <div id="mainMenu" class="absolute inset-0 glass-panel flex flex-col items-center justify-center p-6 z-20">
+      <h1 class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-600 tracking-wider mb-2">SHADOW FIGHT 2D</h1>
+      <p class="text-amber-200/70 text-xs md:text-sm mb-6">Trải nghiệm Võ Thuật Bóng Đêm PvP Online</p>
+
+      <!-- AUTH FORM (ĐĂNG NHẬP / ĐĂNG KÝ USERNAME) -->
+      <div id="authBox" class="w-full max-w-sm bg-stone-900/90 border border-amber-500/40 p-5 rounded-xl shadow-2xl mb-4">
+        <h2 id="authTitle" class="text-center font-bold text-amber-400 mb-3 text-base">ĐĂNG NHẬP GAME</h2>
+        
+        <div class="space-y-3">
+          <div>
+            <label class="text-[11px] text-amber-200/80 block mb-1">Tên Đăng Nhập (Username)</label>
+            <input id="inputUsername" type="text" placeholder="Nhập tên tài khoản..." class="w-full bg-stone-950 border border-amber-900 focus:border-amber-500 text-amber-100 text-sm rounded px-3 py-2 outline-none">
+          </div>
+          <div>
+            <label class="text-[11px] text-amber-200/80 block mb-1">Mật Khẩu</label>
+            <input id="inputPassword" type="password" placeholder="Nhập mật khẩu..." class="w-full bg-stone-950 border border-amber-900 focus:border-amber-500 text-amber-100 text-sm rounded px-3 py-2 outline-none">
+          </div>
+          
+          <p id="authMsg" class="text-xs text-center text-red-400 min-h-[16px]"></p>
+
+          <div class="flex gap-2 pt-1">
+            <button id="btnLogin" class="flex-1 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-stone-950 font-bold py-2 rounded text-sm transition">Đăng Nhập</button>
+            <button id="btnRegister" class="flex-1 bg-stone-800 hover:bg-stone-700 active:bg-stone-900 border border-amber-500/50 text-amber-300 font-bold py-2 rounded text-sm transition">Đăng Ký</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- USER PROFILE & MODE SELECTION (HIỂN THỊ KHI ĐÃ AUTH) -->
+      <div id="gameModesBox" class="w-full max-w-sm space-y-3 hidden">
+        <div class="flex items-center justify-between bg-stone-900/80 px-4 py-2 rounded-lg border border-amber-500/30">
+          <span class="text-xs text-stone-400">Tài khoản: <strong id="userDisplayName" class="text-amber-400 text-sm">Player</strong></span>
+          <button id="btnLogout" class="text-xs text-red-400 hover:underline">Đăng xuất</button>
+        </div>
+
+        <button id="btnOfflineMode" class="w-full py-3 bg-gradient-to-r from-stone-800 to-stone-700 hover:from-stone-700 hover:to-stone-600 border border-stone-500 rounded-lg font-bold text-amber-200 text-sm flex items-center justify-center gap-2 shadow-md">
+          <span>🤖</span> Chơi Đơn (VS AI / 2 Người 1 Máy)
+        </button>
+
+        <div class="relative flex py-1 items-center">
+          <div class="flex-grow border-t border-amber-900/50"></div>
+          <span class="flex-shrink mx-3 text-[10px] text-amber-500 uppercase tracking-widest">Chế Độ Online PvP</span>
+          <div class="flex-grow border-t border-amber-900/50"></div>
+        </div>
+
+        <div class="flex gap-2">
+          <button id="btnCreateRoom" class="flex-1 py-3 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-stone-950 font-black rounded-lg text-sm shadow-lg">
+            ➕ Tạo Phòng (P1)
+          </button>
+          
+          <div class="flex-1 flex gap-1">
+            <input id="inputRoomCode" type="text" maxlength="4" placeholder="Mã..." class="w-16 bg-stone-950 border border-amber-800 rounded text-center text-amber-300 font-mono font-bold text-sm outline-none uppercase">
+            <button id="btnJoinRoom" class="flex-1 py-3 bg-stone-800 hover:bg-stone-700 border border-amber-500/50 text-amber-400 font-bold rounded-lg text-sm">
+              Vào Phòng
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- NOTIFICATION / STATUS OVERLAY -->
+    <div id="gameStatusModal" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-30 hidden">
+      <h2 id="statusTitle" class="text-3xl font-black text-amber-400 mb-2">CHIẾN THẮNG!</h2>
+      <p id="statusDesc" class="text-sm text-stone-300 mb-6">Player 1 đã hạ gục đối thủ.</p>
+      <button id="btnBackToMenu" class="px-6 py-2.5 bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold rounded-lg text-sm">Về Menu Chính</button>
+    </div>
+
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. CẤU HÌNH SUPABASE CLIENT
+    // ==========================================
+    const SUPABASE_URL = "https://boyucafuxksicwwzdpxl.supabase.co";
+    const SUPABASE_ANON_KEY = "sb_publishable_Ec7Nh_W8CpUM-uEVNg5_IA_4o4zihm0";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Dynamic Auth Domain Helper (Ghi nhận Username mà không cần Email thật)
+    const USERNAME_DOMAIN = "@shadowfight.game";
+
+    // App Global State
+    let currentUser = null;
+    let gameMode = 'OFFLINE'; // 'OFFLINE' | 'PVP_HOST' | 'PVP_GUEST'
+    let realtimeChannel = null;
+    let roomCode = null;
+
+    // Canvas Context
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // ==========================================
+    // 2. GAME ENGINE & STATE
+    // ==========================================
+    const GAME_WIDTH = 1000;
+    const GAME_HEIGHT = 562;
+    const GROUND_Y = 460;
+
+    let timer = 99;
+    let timerInterval = null;
+    let isGameOver = false;
+
+    // Player Class (Nối các đòn đánh & chuyển động)
+    class Fighter {
+      constructor(x, color, isPlayer1) {
+        this.startX = x;
+        this.x = x;
+        this.y = GROUND_Y;
+        this.width = 45;
+        this.height = 110;
+        this.vx = 0;
+        this.vy = 0;
+        this.speed = 5.5;
+        this.jumpForce = -14;
+        this.gravity = 0.65;
+        this.isGrounded = true;
+        this.facing = isPlayer1 ? 1 : -1;
+        this.hp = 100;
+        this.color = color;
+        this.isP1 = isPlayer1;
+
+        // State Action
+        this.state = 'idle'; // idle, run, jump, crouch, punch, kick, weapon, hit
+        this.stateTimer = 0;
+        this.attackBox = null;
+        this.hasHit = false;
+      }
+
+      reset(x) {
+        this.x = x;
+        this.y = GROUND_Y;
+        this.vx = 0;
+        this.vy = 0;
+        this.hp = 100;
+        this.state = 'idle';
+        this.stateTimer = 0;
+        this.isGrounded = true;
+        this.facing = this.isP1 ? 1 : -1;
+      }
+
+      update(enemy) {
+        // Trọng lực
+        this.vy += this.gravity;
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Xử lý chạm đất
+        if (this.y >= GROUND_Y) {
+          this.y = GROUND_Y;
+          this.vy = 0;
+          this.isGrounded = true;
+        } else {
+          this.isGrounded = false;
+        }
+
+        // Tự động xoay mặt về phía đối thủ
+        if (this.state === 'idle' || this.state === 'run') {
+          if (this.x < enemy.x) this.facing = 1;
+          else this.facing = -1;
+        }
+
+        // Bọc viền màn hình
+        if (this.x < 30) this.x = 30;
+        if (this.x > GAME_WIDTH - 30) this.x = GAME_WIDTH - 30;
+
+        // Timer đòn đánh
+        if (this.stateTimer > 0) {
+          this.stateTimer--;
+          if (this.stateTimer <= 0) {
+            this.state = 'idle';
+            this.attackBox = null;
+            this.hasHit = false;
+          }
+        }
+
+        // Kiểm tra Va chạm đòn đánh
+        if (this.attackBox && !this.hasHit) {
+          if (checkCollision(this.attackBox, enemy)) {
+            enemy.takeDamage(this.attackBox.damage);
+            this.hasHit = true;
+          }
+        }
+      }
+
+      attack(type) {
+        if (this.stateTimer > 0) return; // Đang bận ra chiêu khác
+
+        this.state = type;
+        this.hasHit = false;
+
+        if (type === 'punch') {
+          this.stateTimer = 18;
+          this.attackBox = {
+            x: this.facing === 1 ? this.x + 10 : this.x - 60,
+            y: this.y - 85,
+            w: 50,
+            h: 25,
+            damage: 8
+          };
+        } else if (type === 'kick') {
+          this.stateTimer = 22;
+          this.attackBox = {
+            x: this.facing === 1 ? this.x + 10 : this.x - 70,
+            y: this.y - 55,
+            w: 60,
+            h: 30,
+            damage: 12
+          };
+        } else if (type === 'weapon') {
+          this.stateTimer = 28;
+          this.attackBox = {
+            x: this.facing === 1 ? this.x + 10 : this.x - 90,
+            y: this.y - 95,
+            w: 80,
+            h: 40,
+            damage: 18
+          };
+        }
+      }
+
+      takeDamage(amount) {
+        this.hp = Math.max(0, this.hp - amount);
+        this.state = 'hit';
+        this.stateTimer = 12;
+        this.vx = -this.facing * 4; // Bị giật lùi khi trúng đòn
+      }
+
+      draw(ctx) {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+
+        // Bóng đổ dưới chân
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 30, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Vẽ Nhân vật Silhouette (Bóng Đen)
+        ctx.fillStyle = '#111';
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 3;
+
+        // Đổi hướng nhân vật theo facing
+        ctx.scale(this.facing, 1);
+
+        // 1. Thân (Torso)
+        ctx.beginPath();
+        if (this.state === 'crouch') {
+          ctx.ellipse(0, -35, 18, 25, 0, 0, Math.PI * 2);
+        } else {
+          ctx.ellipse(0, -65, 16, 32, 0, 0, Math.PI * 2);
+        }
+        ctx.fill();
+
+        // 2. Đầu (Head)
+        ctx.beginPath();
+        const headY = this.state === 'crouch' ? -65 : -105;
+        ctx.arc(0, headY, 13, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Tóc / Khăn đội đầu
+        ctx.fillStyle = this.isP1 ? '#d4af37' : '#3b82f6';
+        ctx.fillRect(-8, headY - 14, 16, 4);
+
+        ctx.fillStyle = '#111';
+
+        // 3. Chân (Legs)
+        ctx.lineWidth = 8;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        if (this.state === 'crouch') {
+          ctx.moveTo(-5, -30); ctx.lineTo(-20, -10); ctx.lineTo(-22, 0);
+          ctx.moveTo(5, -30); ctx.lineTo(20, -10); ctx.lineTo(22, 0);
+        } else if (!this.isGrounded) {
+          ctx.moveTo(-5, -45); ctx.lineTo(-18, -25);
+          ctx.moveTo(5, -45); ctx.lineTo(12, -15);
+        } else {
+          ctx.moveTo(-5, -40); ctx.lineTo(-12, 0);
+          ctx.moveTo(5, -40); ctx.lineTo(15, 0);
+        }
+        ctx.stroke();
+
+        // 4. Tay & Vũ Khí (Arms & Weapon)
+        ctx.beginPath();
+        if (this.state === 'punch') {
+          ctx.moveTo(-5, -75); ctx.lineTo(35, -75); // Tay đấm thẳng
+        } else if (this.state === 'kick') {
+          ctx.moveTo(0, -40); ctx.lineTo(40, -45); // Chân đá thẳng
+        } else if (this.state === 'weapon') {
+          ctx.moveTo(-5, -70); ctx.lineTo(25, -90);
+          // Vẽ hiệu ứng đường kiếm chém
+          ctx.strokeStyle = '#60a5fa';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.arc(10, -70, 50, -Math.PI / 4, Math.PI / 4);
+          ctx.stroke();
+        } else {
+          // Tư thế thủ (Idle/Guard)
+          ctx.moveTo(-5, -70); ctx.lineTo(12, -80);
+          ctx.moveTo(5, -70); ctx.lineTo(18, -65);
+        }
+        ctx.stroke();
+
+        ctx.restore();
+      }
+    }
+
+    function checkCollision(rect1, rect2) {
+      const p2Box = {
+        x: rect2.x - 20,
+        y: rect2.y - 100,
+        w: 40,
+        h: 100
+      };
+      return (
+        rect1.x < p2Box.x + p2Box.w &&
+        rect1.x + rect1.w > p2Box.x &&
+        rect1.y < p2Box.y + p2Box.h &&
+        rect1.y + rect1.h > p2Box.y
+      );
+    }
+
+    // Khởi tạo 2 Nhân vật
+    const player1 = new Fighter(250, '#d4af37', true);
+    const player2 = new Fighter(750, '#3b82f6', false);
+
+    // ==========================================
+    // 3. BACKGROUND DRAWING (RỪNG TRÚC SHADOW FIGHT)
+    // ==========================================
+    function drawBackground() {
+      // Bầu trời đêm chuyển màu
+      const skyGradient = ctx.createLinearGradient(0, 0, 0, GAME_HEIGHT);
+      skyGradient.addColorStop(0, '#0a150d');
+      skyGradient.addColorStop(0.6, '#132e1b');
+      skyGradient.addColorStop(1, '#1c3d25');
+      ctx.fillStyle = skyGradient;
+      ctx.fillRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+      // Mặt Trăng Tròn
+      ctx.fillStyle = 'rgba(255, 250, 220, 0.85)';
+      ctx.beginPath();
+      ctx.arc(500, 140, 70, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Hào quang mặt trăng
+      ctx.fillStyle = 'rgba(255, 250, 220, 0.08)';
+      ctx.beginPath();
+      ctx.arc(500, 140, 120, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Vẽ Rừng Trúc Bóng Đen Lớp Sau (Far Bamboo Layer)
+      ctx.fillStyle = 'rgba(10, 25, 15, 0.6)';
+      for (let i = 0; i < GAME_WIDTH; i += 35) {
+        ctx.fillRect(i, 80, 8, GAME_HEIGHT - 80);
+      }
+
+      // Vẽ Rừng Trúc Bóng Đen Lớp Trước (Foreground Bamboo)
+      ctx.fillStyle = '#061209';
+      for (let i = 15; i < GAME_WIDTH; i += 70) {
+        ctx.fillRect(i, 0, 14, GROUND_Y);
+        // Các đốt trúc
+        for (let j = 40; j < GROUND_Y; j += 60) {
+          ctx.fillRect(i - 2, j, 18, 3);
+        }
+      }
+
+      // Mặt đất sàn đấu
+      ctx.fillStyle = '#050a06';
+      ctx.fillRect(0, GROUND_Y, GAME_WIDTH, GAME_HEIGHT - GROUND_Y);
+
+      // Sợi cỏ trên mặt đất
+      ctx.fillStyle = '#0f2614';
+      ctx.fillRect(0, GROUND_Y, GAME_WIDTH, 4);
+    }
+
+    // Loop Game Engine
+    function gameLoop() {
+      ctx.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
+
+      drawBackground();
+
+      if (!isGameOver) {
+        // Cập nhật Nhân vật
+        player1.update(player2);
+        player2.update(player1);
+
+        // Xử lý AI Đơn giản cho P2 khi chơi Offline đơn
+        if (gameMode === 'OFFLINE' && Math.random() < 0.03) {
+          const dist = Math.abs(player1.x - player2.x);
+          if (dist > 100) {
+            player2.vx = player1.x < player2.x ? -3 : 3;
+          } else {
+            player2.vx = 0;
+            const attacks = ['punch', 'kick', 'weapon'];
+            player2.attack(attacks[Math.floor(Math.random() * attacks.length)]);
+          }
+        }
+
+        // Kiểm tra Hạ gục (HP <= 0)
+        if (player1.hp <= 0 || player2.hp <= 0 || timer <= 0) {
+          endGame();
+        }
+
+        // Nếu là Online PvP -> Đồng bộ trạng thái từ Host/Guest
+        if (gameMode === 'PVP_HOST') {
+          broadcastGameState();
+        }
+      }
+
+      // Vẽ Nhân vật
+      player1.draw(ctx);
+      player2.draw(ctx);
+
+      // Cập nhật thanh Máu UI
+      document.getElementById('p1HpBar').style.width = player1.hp + '%';
+      document.getElementById('p2HpBar').style.width = player2.hp + '%';
+      document.getElementById('p1HpNum').innerText = Math.ceil(player1.hp) + ' HP';
+      document.getElementById('p2HpNum').innerText = Math.ceil(player2.hp) + ' HP';
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    // Start / End Game Logic
+    function startGame() {
+      isGameOver = false;
+      timer = 99;
+      player1.reset(250);
+      player2.reset(750);
+
+      document.getElementById('mainMenu').classList.add('hidden');
+      document.getElementById('gameHud').classList.remove('hidden');
+      document.getElementById('touchControls').classList.remove('hidden');
+      document.getElementById('gameStatusModal').classList.add('hidden');
+
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        if (timer > 0 && !isGameOver) {
+          timer--;
+          document.getElementById('timerText').innerText = timer;
+        }
+      }, 1000);
+    }
+
+    function endGame() {
+      isGameOver = true;
+      clearInterval(timerInterval);
+
+      let winnerText = "HOÀ NHAU!";
+      let descText = "Cả hai cao thủ đồng sức đồng tài.";
+
+      if (player1.hp > player2.hp) {
+        winnerText = "SHADOW (P1) CHIẾN THẮNG!";
+        descText = "Đối thủ đã bị gục ngã dưới lưỡi kiếm.";
+      } else if (player2.hp > player1.hp) {
+        winnerText = "NINJA (P2) CHIẾN THẮNG!";
+        descText = "Tuyệt kỹ Ninja đã làm chủ trận đấu.";
+      }
+
+      document.getElementById('statusTitle').innerText = winnerText;
+      document.getElementById('statusDesc').innerText = descText;
+      document.getElementById('gameStatusModal').classList.remove('hidden');
+    }
+
+    // ==========================================
+    // 4. SUPABASE REALTIME MULTIPLAYER (BROADCAST)
+    // ==========================================
+    function setupRealtimeRoom(code, isHost) {
+      roomCode = code;
+      gameMode = isHost ? 'PVP_HOST' : 'PVP_GUEST';
+
+      document.getElementById('roomTag').innerText = `Phòng: ${roomCode}`;
+
+      // Tạo Kênh Supabase Realtime Channel
+      realtimeChannel = supabase.channel(`room_${roomCode}`, {
+        config: { broadcast: { ack: false, self: false } }
+      });
+
+      realtimeChannel
+        .on('broadcast', { event: 'p2_input' }, (payload) => {
+          // Host nhận thao tác từ Guest (P2)
+          if (gameMode === 'PVP_HOST' && payload.data) {
+            const cmd = payload.data;
+            if (cmd.type === 'move') player2.vx = cmd.vx;
+            if (cmd.type === 'jump' && player2.isGrounded) player2.vy = player2.jumpForce;
+            if (cmd.type === 'attack') player2.attack(cmd.attackType);
+          }
+        })
+        .on('broadcast', { event: 'game_state' }, (payload) => {
+          // Guest nhận toàn bộ vị trí & HP từ Host (P1)
+          if (gameMode === 'PVP_GUEST' && payload.data) {
+            const state = payload.data;
+            player1.x = state.p1.x;
+            player1.y = state.p1.y;
+            player1.hp = state.p1.hp;
+            player1.state = state.p1.state;
+            player1.facing = state.p1.facing;
+
+            player2.x = state.p2.x;
+            player2.y = state.p2.y;
+            player2.hp = state.p2.hp;
+            player2.state = state.p2.state;
+            player2.facing = state.p2.facing;
+
+            timer = state.timer;
+            document.getElementById('timerText').innerText = timer;
+          }
+        })
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') {
+            console.log("Đã kết nối phòng Realtime:", roomCode);
+            startGame();
+          }
+        });
+    }
+
+    // Host gửi Game State tới Guest mỗi frame
+    function broadcastGameState() {
+      if (realtimeChannel && gameMode === 'PVP_HOST') {
+        realtimeChannel.send({
+          type: 'broadcast',
+          event: 'game_state',
+          data: {
+            p1: { x: player1.x, y: player1.y, hp: player1.hp, state: player1.state, facing: player1.facing },
+            p2: { x: player2.x, y: player2.y, hp: player2.hp, state: player2.state, facing: player2.facing },
+            timer: timer
+          }
+        });
+      }
+    }
+
+    // Guest gửi lệnh điều khiển về Host
+    function sendGuestInput(cmd) {
+      if (realtimeChannel && gameMode === 'PVP_GUEST') {
+        realtimeChannel.send({
+          type: 'broadcast',
+          event: 'p2_input',
+          data: cmd
+        });
+      }
+    }
+
+    // ==========================================
+    // 5. ĐIỀU KHIỂN BÀN PHÍM & JOYSTICK MOBILE
+    // ==========================================
+    const keys = {};
+
+    window.addEventListener('keydown', (e) => {
+      keys[e.key.toLowerCase()] = true;
+      handleInput();
+    });
+
+    window.addEventListener('keyup', (e) => {
+      keys[e.key.toLowerCase()] = false;
+      handleInput();
+    });
+
+    function handleInput() {
+      if (isGameOver) return;
+
+      // --- P1 CONTROLS (Host / Offline P1) ---
+      if (gameMode === 'OFFLINE' || gameMode === 'PVP_HOST') {
+        if (keys['a']) player1.vx = -player1.speed;
+        else if (keys['d']) player1.vx = player1.speed;
+        else player1.vx = 0;
+
+        if (keys['w'] && player1.isGrounded) player1.vy = player1.jumpForce;
+        if (keys['s']) player1.state = 'crouch';
+
+        if (keys['j']) player1.attack('punch');
+        if (keys['k']) player1.attack('kick');
+        if (keys['u']) player1.attack('weapon');
+      }
+
+      // --- P2 CONTROLS (Guest Online hoặc Local Offline P2) ---
+      if (gameMode === 'OFFLINE') {
+        if (keys['arrowleft']) player2.vx = -player2.speed;
+        else if (keys['arrowright']) player2.vx = player2.speed;
+        else player2.vx = 0;
+
+        if (keys['arrowup'] && player2.isGrounded) player2.vy = player2.jumpForce;
+        if (keys['1']) player2.attack('punch');
+        if (keys['2']) player2.attack('kick');
+        if (keys['3']) player2.attack('weapon');
+      } else if (gameMode === 'PVP_GUEST') {
+        let vx = 0;
+        if (keys['a'] || keys['arrowleft']) vx = -player2.speed;
+        if (keys['d'] || keys['arrowright']) vx = player2.speed;
+        
+        sendGuestInput({ type: 'move', vx: vx });
+
+        if ((keys['w'] || keys['arrowup'])) {
+          sendGuestInput({ type: 'jump' });
+        }
+        if (keys['j'] || keys['1']) sendGuestInput({ type: 'attack', attackType: 'punch' });
+        if (keys['k'] || keys['2']) sendGuestInput({ type: 'attack', attackType: 'kick' });
+        if (keys['u'] || keys['3']) sendGuestInput({ type: 'attack', attackType: 'weapon' });
+      }
+    }
+
+    // --- JOYSTICK TOUCH TRACKING ---
+    const joystickBase = document.getElementById('joystickBase');
+    const joystickThumb = document.getElementById('joystickThumb');
+    let touchId = null;
+
+    joystickBase.addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      const touch = e.changedTouches[0];
+      touchId = touch.identifier;
+      updateJoystick(touch);
+    });
+
+    window.addEventListener('touchmove', (e) => {
+      if (touchId === null) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === touchId) {
+          updateJoystick(e.changedTouches[i]);
+          break;
+        }
+      }
+    });
+
+    window.addEventListener('touchend', (e) => {
+      if (touchId === null) return;
+      for (let i = 0; i < e.changedTouches.length; i++) {
+        if (e.changedTouches[i].identifier === touchId) {
+          touchId = null;
+          joystickThumb.style.transform = `translate(0px, 0px)`;
+          // Reset Di chuyển
+          if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'move', vx: 0 });
+          else player1.vx = 0;
+          break;
+        }
+      }
+    });
+
+    function updateJoystick(touch) {
+      const rect = joystickBase.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+
+      let dx = touch.clientX - centerX;
+      let dy = touch.clientY - centerY;
+      const maxRadius = 45;
+
+      const distance = Math.hypot(dx, dy);
+      if (distance > maxRadius) {
+        dx = (dx / distance) * maxRadius;
+        dy = (dy / distance) * maxRadius;
+      }
+
+      joystickThumb.style.transform = `translate(${dx}px, ${dy}px)`;
+
+      // Phân tích hướng Joystick
+      const activeFighter = (gameMode === 'PVP_GUEST') ? player2 : player1;
+
+      if (dx < -15) {
+        if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'move', vx: -activeFighter.speed });
+        else activeFighter.vx = -activeFighter.speed;
+      } else if (dx > 15) {
+        if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'move', vx: activeFighter.speed });
+        else activeFighter.vx = activeFighter.speed;
+      } else {
+        if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'move', vx: 0 });
+        else activeFighter.vx = 0;
+      }
+
+      if (dy < -25) {
+        if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'jump' });
+        else if (activeFighter.isGrounded) activeFighter.vy = activeFighter.jumpForce;
+      }
+    }
+
+    // Touch Buttons Tấn Công
+    document.getElementById('btnPunch').addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'attack', attackType: 'punch' });
+      else player1.attack('punch');
+    });
+
+    document.getElementById('btnKick').addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'attack', attackType: 'kick' });
+      else player1.attack('kick');
+    });
+
+    document.getElementById('btnWeapon').addEventListener('touchstart', (e) => {
+      e.preventDefault();
+      if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'attack', attackType: 'weapon' });
+      else player1.attack('weapon');
+    });
+
+    // ==========================================
+    // 6. XỬ LÝ SUPABASE AUTH & UI MENU
+    // ==========================================
+    const btnLogin = document.getElementById('btnLogin');
+    const btnRegister = document.getElementById('btnRegister');
+    const btnLogout = document.getElementById('btnLogout');
+    const authMsg = document.getElementById('authMsg');
+    const authBox = document.getElementById('authBox');
+    const gameModesBox = document.getElementById('gameModesBox');
+
+    // Đăng ký Username
+    btnRegister.addEventListener('click', async () => {
+      const username = document.getElementById('inputUsername').value.trim();
+      const password = document.getElementById('inputPassword').value.trim();
+
+      if (!username || !password) {
+        authMsg.innerText = "Vui lòng nhập Username và Mật khẩu!";
+        return;
+      }
+
+      authMsg.innerText = "Đang tạo tài khoản...";
+      const email = `${username.toLowerCase()}${USERNAME_DOMAIN}`;
+
+      const { data, error } = await supabase.auth.signUp({
+        email: email,
+        password: password,
+        options: { data: { username: username } }
+      });
+
+      if (error) {
+        authMsg.innerText = "Lỗi đăng ký: " + error.message;
+      } else {
+        authMsg.className = "text-xs text-center text-green-400 min-h-[16px]";
+        authMsg.innerText = "Đăng ký thành công! Hãy bấm Đăng nhập.";
+      }
+    });
+
+    // Đăng nhập Username
+    btnLogin.addEventListener('click', async () => {
+      const username = document.getElementById('inputUsername').value.trim();
+      const password = document.getElementById('inputPassword').value.trim();
+
+      if (!username || !password) {
+        authMsg.innerText = "Vui lòng nhập Username và Mật khẩu!";
+        return;
+      }
+
+      authMsg.innerText = "Đang xác thực...";
+      const email = `${username.toLowerCase()}${USERNAME_DOMAIN}`;
+
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
+
+      if (error) {
+        authMsg.className = "text-xs text-center text-red-400 min-h-[16px]";
+        authMsg.innerText = "Sai tài khoản hoặc mật khẩu!";
+      } else {
+        currentUser = data.user;
+        showAuthenticatedUI(username);
+      }
+    });
+
+    // Đăng xuất
+    btnLogout.addEventListener('click', async () => {
+      await supabase.auth.signOut();
+      currentUser = null;
+      authBox.classList.remove('hidden');
+      gameModesBox.classList.add('hidden');
+    });
+
+    function showAuthenticatedUI(name) {
+      authBox.classList.add('hidden');
+      gameModesBox.classList.remove('hidden');
+      document.getElementById('userDisplayName').innerText = name;
+    }
+
+    // Kiểm tra Session cũ
+    async function checkExistingSession() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session && session.user) {
+        currentUser = session.user;
+        const name = currentUser.user_metadata?.username || currentUser.email.split('@')[0];
+        showAuthenticatedUI(name);
+      }
+    }
+    checkExistingSession();
+
+    // Mode Buttons
+    document.getElementById('btnOfflineMode').addEventListener('click', () => {
+      gameMode = 'OFFLINE';
+      document.getElementById('roomTag').innerText = "Offline";
+      startGame();
+    });
+
+    document.getElementById('btnCreateRoom').addEventListener('click', () => {
+      const randomCode = Math.floor(1000 + Math.random() * 9000).toString();
+      setupRealtimeRoom(randomCode, true);
+    });
+
+    document.getElementById('btnJoinRoom').addEventListener('click', () => {
+      const code = document.getElementById('inputRoomCode').value.trim();
+      if (code.length !== 4) {
+        alert("Vui lòng nhập đủ mã phòng 4 chữ số!");
+        return;
+      }
+      setupRealtimeRoom(code, false);
+    });
+
+    document.getElementById('btnBackToMenu').addEventListener('click', () => {
+      document.getElementById('gameStatusModal').classList.add('hidden');
+      document.getElementById('gameHud').classList.add('hidden');
+      document.getElementById('touchControls').classList.add('hidden');
+      document.getElementById('mainMenu').classList.remove('hidden');
+      if (realtimeChannel) supabase.removeChannel(realtimeChannel);
+    });
+
+    // Khởi chạy Vòng Lặp Engine
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>
