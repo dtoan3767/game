@@ -80,30 +80,30 @@
       </div>
     </div>
 
-    <!-- MAIN MENU (NHẬP TÊN NHANH) -->
-    <div id="mainMenu" class="absolute inset-0 glass-panel flex flex-col items-center justify-center p-6 z-20">
+    <!-- MAIN MENU -->
+    <div id="mainMenu" class="absolute inset-0 glass-panel flex flex-col items-center justify-center p-6 z-20 pointer-events-auto">
       <h1 class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-600 tracking-wider mb-2">SHADOW FIGHT 2D</h1>
       <p class="text-amber-200/70 text-xs md:text-sm mb-6">Trải nghiệm Võ Thuật Bóng Đêm PvP Online</p>
 
-      <div class="w-full max-w-sm bg-stone-900/90 border border-amber-500/40 p-5 rounded-xl shadow-2xl mb-4">
+      <!-- KHUNG NHẬP TÊN -->
+      <div id="nicknameBox" class="w-full max-w-sm bg-stone-900/90 border border-amber-500/40 p-5 rounded-xl shadow-2xl mb-4 pointer-events-auto">
         <h2 class="text-center font-bold text-amber-400 mb-3 text-base">NHẬP TÊN NGƯỜI CHƠI</h2>
-        
         <div class="space-y-3">
           <input id="inputNickname" type="text" placeholder="Nhập tên của bạn..." class="w-full bg-stone-950 border border-amber-900 focus:border-amber-500 text-amber-100 text-sm rounded px-3 py-2.5 outline-none text-center font-bold tracking-wide">
-          
-          <button id="btnEnterGame" class="w-full bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-stone-950 font-black py-2.5 rounded text-sm transition shadow-lg">
+          <button id="btnEnterGame" class="w-full bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-stone-950 font-black py-2.5 rounded text-sm transition shadow-lg cursor-pointer">
             VÀO MENU CHÍNH ➔
           </button>
         </div>
       </div>
 
-      <div id="gameModesBox" class="w-full max-w-sm space-y-3 hidden">
+      <!-- KHUNG CHỌN CHẾ ĐỘ CHƠI -->
+      <div id="gameModesBox" class="w-full max-w-sm space-y-3 hidden pointer-events-auto">
         <div class="flex items-center justify-between bg-stone-900/80 px-4 py-2 rounded-lg border border-amber-500/30">
           <span class="text-xs text-stone-400">Đấu sĩ: <strong id="userDisplayName" class="text-amber-400 text-sm">Player</strong></span>
-          <button id="btnChangeName" class="text-xs text-amber-300 hover:underline">Đổi tên</button>
+          <button id="btnChangeName" class="text-xs text-amber-300 hover:underline cursor-pointer">Đổi tên</button>
         </div>
 
-        <button id="btnOfflineMode" class="w-full py-3 bg-gradient-to-r from-stone-800 to-stone-700 hover:from-stone-700 hover:to-stone-600 border border-stone-500 rounded-lg font-bold text-amber-200 text-sm flex items-center justify-center gap-2 shadow-md">
+        <button id="btnOfflineMode" class="w-full py-3 bg-gradient-to-r from-stone-800 to-stone-700 hover:from-stone-700 hover:to-stone-600 border border-stone-500 rounded-lg font-bold text-amber-200 text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer">
           <span>🤖</span> Chơi Đơn (VS AI / 2 Người 1 Máy)
         </button>
 
@@ -114,13 +114,13 @@
         </div>
 
         <div class="flex gap-2">
-          <button id="btnCreateRoom" class="flex-1 py-3 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-stone-950 font-black rounded-lg text-sm shadow-lg">
+          <button id="btnCreateRoom" class="flex-1 py-3 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 text-stone-950 font-black rounded-lg text-sm shadow-lg cursor-pointer">
             ➕ Tạo Phòng (P1)
           </button>
           
           <div class="flex-1 flex gap-1">
             <input id="inputRoomCode" type="text" maxlength="4" placeholder="Mã..." class="w-16 bg-stone-950 border border-amber-800 rounded text-center text-amber-300 font-mono font-bold text-sm outline-none uppercase">
-            <button id="btnJoinRoom" class="flex-1 py-3 bg-stone-800 hover:bg-stone-700 border border-amber-500/50 text-amber-400 font-bold rounded-lg text-sm">
+            <button id="btnJoinRoom" class="flex-1 py-3 bg-stone-800 hover:bg-stone-700 border border-amber-500/50 text-amber-400 font-bold rounded-lg text-sm cursor-pointer">
               Vào Phòng
             </button>
           </div>
@@ -129,10 +129,10 @@
     </div>
 
     <!-- STATUS MODAL -->
-    <div id="gameStatusModal" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-30 hidden">
+    <div id="gameStatusModal" class="absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-30 hidden pointer-events-auto">
       <h2 id="statusTitle" class="text-3xl font-black text-amber-400 mb-2">CHIẾN THẮNG!</h2>
       <p id="statusDesc" class="text-sm text-stone-300 mb-6">Player 1 đã hạ gục đối thủ.</p>
-      <button id="btnBackToMenu" class="px-6 py-2.5 bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold rounded-lg text-sm">Về Menu Chính</button>
+      <button id="btnBackToMenu" class="px-6 py-2.5 bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold rounded-lg text-sm cursor-pointer">Về Menu Chính</button>
     </div>
 
   </div>
@@ -604,18 +604,16 @@
     }
 
     document.getElementById('btnPunch').addEventListener('touchstart', (e) => { e.preventDefault(); if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'attack', attackType: 'punch' }); else player1.attack('punch'); });
-    document.getElementById('btnKick').addEventListener('touchstart', (e) => { e.preventDefault(); if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'attack', attackType: 'kick' }); else player1.attack('kick'); });
+    document.getElementById('btnKick').addEventListener('touchstart', (e) => { e.preventDefault(); if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'attack', attackType: 'attack' }); else player1.attack('kick'); });
     document.getElementById('btnWeapon').addEventListener('touchstart', (e) => { e.preventDefault(); if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'attack', attackType: 'weapon' }); else player1.attack('weapon'); });
 
-    // ==========================================
-    // UI XỬ LÝ NHẬP TÊN NHANH
-    // ==========================================
+    // UI XỬ LÝ NHẬP TÊN (ĐÃ SỬA LỖI HIỂN THỊ)
     const inputNickname = document.getElementById('inputNickname');
     const btnEnterGame = document.getElementById('btnEnterGame');
     const btnChangeName = document.getElementById('btnChangeName');
+    const nicknameBox = document.getElementById('nicknameBox');
     const gameModesBox = document.getElementById('gameModesBox');
 
-    // Tự động load tên cũ nếu đã từng nhập trên máy này
     const savedName = localStorage.getItem('shadow_nickname');
     if (savedName) {
       inputNickname.value = savedName;
@@ -632,14 +630,13 @@
       document.getElementById('userDisplayName').innerText = name;
       document.getElementById('p1NameLabel').innerText = `${name.toUpperCase()} (P1)`;
 
-      // Ẩn ô nhập tên, hiện menu chọn chế độ
-      inputNickname.parentElement.parentElement.classList.add('hidden');
+      nicknameBox.classList.add('hidden');
       gameModesBox.classList.remove('hidden');
     });
 
     btnChangeName.addEventListener('click', () => {
       gameModesBox.classList.add('hidden');
-      inputNickname.parentElement.parentElement.classList.remove('hidden');
+      nicknameBox.classList.remove('hidden');
     });
 
     document.getElementById('btnOfflineMode').addEventListener('click', () => {
@@ -665,7 +662,7 @@
       document.getElementById('touchControls').classList.add('hidden');
       document.getElementById('mainMenu').classList.remove('hidden');
       gameModesBox.classList.remove('hidden');
-      inputNickname.parentElement.parentElement.classList.add('hidden');
+      nicknameBox.classList.add('hidden');
       if (realtimeChannel) supabase.removeChannel(realtimeChannel);
     });
 
