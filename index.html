@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Shadow Fight Online PvP - Supabase DB</title>
+  <title>Shadow Fight Online PvP</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
@@ -80,37 +80,27 @@
       </div>
     </div>
 
-    <!-- MAIN MENU & AUTH -->
+    <!-- MAIN MENU (NHẬP TÊN NHANH) -->
     <div id="mainMenu" class="absolute inset-0 glass-panel flex flex-col items-center justify-center p-6 z-20">
       <h1 class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-600 tracking-wider mb-2">SHADOW FIGHT 2D</h1>
       <p class="text-amber-200/70 text-xs md:text-sm mb-6">Trải nghiệm Võ Thuật Bóng Đêm PvP Online</p>
 
-      <div id="authBox" class="w-full max-w-sm bg-stone-900/90 border border-amber-500/40 p-5 rounded-xl shadow-2xl mb-4">
-        <h2 class="text-center font-bold text-amber-400 mb-3 text-base">ĐĂNG NHẬP / ĐĂNG KÝ DATABASE</h2>
+      <div class="w-full max-w-sm bg-stone-900/90 border border-amber-500/40 p-5 rounded-xl shadow-2xl mb-4">
+        <h2 class="text-center font-bold text-amber-400 mb-3 text-base">NHẬP TÊN NGƯỜI CHƠI</h2>
         
         <div class="space-y-3">
-          <div>
-            <label class="text-[11px] text-amber-200/80 block mb-1">Tên Đăng Nhập</label>
-            <input id="inputUsername" type="text" placeholder="Nhập tên tài khoản..." class="w-full bg-stone-950 border border-amber-900 focus:border-amber-500 text-amber-100 text-sm rounded px-3 py-2 outline-none">
-          </div>
-          <div>
-            <label class="text-[11px] text-amber-200/80 block mb-1">Mật Khẩu</label>
-            <input id="inputPassword" type="password" placeholder="Nhập mật khẩu..." class="w-full bg-stone-950 border border-amber-900 focus:border-amber-500 text-amber-100 text-sm rounded px-3 py-2 outline-none">
-          </div>
+          <input id="inputNickname" type="text" placeholder="Nhập tên của bạn..." class="w-full bg-stone-950 border border-amber-900 focus:border-amber-500 text-amber-100 text-sm rounded px-3 py-2.5 outline-none text-center font-bold tracking-wide">
           
-          <p id="authMsg" class="text-xs text-center text-red-400 min-h-[16px]"></p>
-
-          <div class="flex gap-2 pt-1">
-            <button id="btnLogin" class="flex-1 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-stone-950 font-bold py-2 rounded text-sm transition">Đăng Nhập</button>
-            <button id="btnRegister" class="flex-1 bg-stone-800 hover:bg-stone-700 active:bg-stone-900 border border-amber-500/50 text-amber-300 font-bold py-2 rounded text-sm transition">Đăng Ký Mới</button>
-          </div>
+          <button id="btnEnterGame" class="w-full bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-stone-950 font-black py-2.5 rounded text-sm transition shadow-lg">
+            VÀO MENU CHÍNH ➔
+          </button>
         </div>
       </div>
 
       <div id="gameModesBox" class="w-full max-w-sm space-y-3 hidden">
         <div class="flex items-center justify-between bg-stone-900/80 px-4 py-2 rounded-lg border border-amber-500/30">
-          <span class="text-xs text-stone-400">Tài khoản: <strong id="userDisplayName" class="text-amber-400 text-sm">Player</strong></span>
-          <button id="btnLogout" class="text-xs text-red-400 hover:underline">Đăng xuất</button>
+          <span class="text-xs text-stone-400">Đấu sĩ: <strong id="userDisplayName" class="text-amber-400 text-sm">Player</strong></span>
+          <button id="btnChangeName" class="text-xs text-amber-300 hover:underline">Đổi tên</button>
         </div>
 
         <button id="btnOfflineMode" class="w-full py-3 bg-gradient-to-r from-stone-800 to-stone-700 hover:from-stone-700 hover:to-stone-600 border border-stone-500 rounded-lg font-bold text-amber-200 text-sm flex items-center justify-center gap-2 shadow-md">
@@ -155,6 +145,7 @@
     let gameMode = 'OFFLINE';
     let realtimeChannel = null;
     let roomCode = null;
+    let playerName = "Player";
 
     const canvas = document.getElementById('gameCanvas');
     const ctx = canvas.getContext('2d');
@@ -444,7 +435,7 @@
       let descText = "Cả hai cao thủ đồng sức đồng tài.";
 
       if (player1.hp > player2.hp) {
-        winnerText = "SHADOW (P1) CHIẾN THẮNG!";
+        winnerText = `${playerName.toUpperCase()} CHIẾN THẮNG!`;
         descText = "Đối thủ đã bị gục ngã dưới lưỡi kiếm.";
       } else if (player2.hp > player1.hp) {
         winnerText = "NINJA (P2) CHIẾN THẮNG!";
@@ -617,98 +608,39 @@
     document.getElementById('btnWeapon').addEventListener('touchstart', (e) => { e.preventDefault(); if (gameMode === 'PVP_GUEST') sendGuestInput({ type: 'attack', attackType: 'weapon' }); else player1.attack('weapon'); });
 
     // ==========================================
-    // LOGIC ĐĂNG KÝ / ĐĂNG NHẬP TRỰC TIẾP TỪ SUPABASE TABLE
+    // UI XỬ LÝ NHẬP TÊN NHANH
     // ==========================================
-    const btnLogin = document.getElementById('btnLogin');
-    const btnRegister = document.getElementById('btnRegister');
-    const btnLogout = document.getElementById('btnLogout');
-    const authMsg = document.getElementById('authMsg');
-    const authBox = document.getElementById('authBox');
+    const inputNickname = document.getElementById('inputNickname');
+    const btnEnterGame = document.getElementById('btnEnterGame');
+    const btnChangeName = document.getElementById('btnChangeName');
     const gameModesBox = document.getElementById('gameModesBox');
 
-    // Kiểm tra session lưu trong máy
-    function checkSavedSession() {
-      const savedUser = localStorage.getItem('shadow_player');
-      if (savedUser) {
-        showAuthenticatedUI(savedUser);
-      }
+    // Tự động load tên cũ nếu đã từng nhập trên máy này
+    const savedName = localStorage.getItem('shadow_nickname');
+    if (savedName) {
+      inputNickname.value = savedName;
     }
 
-    // Đăng ký tài khoản vào bảng players
-    btnRegister.addEventListener('click', async () => {
-      const username = document.getElementById('inputUsername').value.trim();
-      const password = document.getElementById('inputPassword').value.trim();
-
-      if (!username || !password) {
-        authMsg.innerText = "Vui lòng nhập đầy đủ tên và mật khẩu!";
+    btnEnterGame.addEventListener('click', () => {
+      const name = inputNickname.value.trim();
+      if (!name) {
+        alert("Vui lòng nhập tên của bạn!");
         return;
       }
-
-      authMsg.className = "text-xs text-center text-amber-400 min-h-[16px]";
-      authMsg.innerText = "Đang đăng ký...";
-
-      // Kiểm tra xem user đã tồn tại chưa
-      const { data: existing } = await supabase.from('players').select('*').eq('username', username).maybeSingle();
-      if (existing) {
-        authMsg.className = "text-xs text-center text-red-400 min-h-[16px]";
-        authMsg.innerText = "Tên tài khoản này đã được sử dụng!";
-        return;
-      }
-
-      // Thêm mới vào database
-      const { error } = await supabase.from('players').insert([{ username: username, password: password }]);
-      if (error) {
-        authMsg.className = "text-xs text-center text-red-400 min-h-[16px]";
-        authMsg.innerText = "Lỗi: " + error.message;
-      } else {
-        localStorage.setItem('shadow_player', username);
-        authMsg.className = "text-xs text-center text-green-400 min-h-[16px]";
-        authMsg.innerText = "Đăng ký thành công!";
-        setTimeout(() => showAuthenticatedUI(username), 600);
-      }
-    });
-
-    // Đăng nhập từ bảng players
-    btnLogin.addEventListener('click', async () => {
-      const username = document.getElementById('inputUsername').value.trim();
-      const password = document.getElementById('inputPassword').value.trim();
-
-      if (!username || !password) {
-        authMsg.innerText = "Vui lòng nhập đầy đủ tên và mật khẩu!";
-        return;
-      }
-
-      authMsg.className = "text-xs text-center text-amber-400 min-h-[16px]";
-      authMsg.innerText = "Đang kiểm tra...";
-
-      const { data, error } = await supabase.from('players').select('*').eq('username', username).maybeSingle();
-
-      if (error || !data) {
-        authMsg.className = "text-xs text-center text-red-400 min-h-[16px]";
-        authMsg.innerText = "Tài khoản không tồn tại!";
-      } else if (data.password !== password) {
-        authMsg.className = "text-xs text-center text-red-400 min-h-[16px]";
-        authMsg.innerText = "Sai mật khẩu!";
-      } else {
-        localStorage.setItem('shadow_player', username);
-        showAuthenticatedUI(username);
-      }
-    });
-
-    btnLogout.addEventListener('click', () => {
-      localStorage.removeItem('shadow_player');
-      authBox.classList.remove('hidden');
-      gameModesBox.classList.add('hidden');
-      authMsg.innerText = "";
-    });
-
-    function showAuthenticatedUI(name) {
-      authBox.classList.add('hidden');
-      gameModesBox.classList.remove('hidden');
+      playerName = name;
+      localStorage.setItem('shadow_nickname', name);
       document.getElementById('userDisplayName').innerText = name;
-    }
+      document.getElementById('p1NameLabel').innerText = `${name.toUpperCase()} (P1)`;
 
-    checkSavedSession();
+      // Ẩn ô nhập tên, hiện menu chọn chế độ
+      inputNickname.parentElement.parentElement.classList.add('hidden');
+      gameModesBox.classList.remove('hidden');
+    });
+
+    btnChangeName.addEventListener('click', () => {
+      gameModesBox.classList.add('hidden');
+      inputNickname.parentElement.parentElement.classList.remove('hidden');
+    });
 
     document.getElementById('btnOfflineMode').addEventListener('click', () => {
       gameMode = 'OFFLINE';
@@ -732,6 +664,8 @@
       document.getElementById('gameHud').classList.add('hidden');
       document.getElementById('touchControls').classList.add('hidden');
       document.getElementById('mainMenu').classList.remove('hidden');
+      gameModesBox.classList.remove('hidden');
+      inputNickname.parentElement.parentElement.classList.add('hidden');
       if (realtimeChannel) supabase.removeChannel(realtimeChannel);
     });
 
