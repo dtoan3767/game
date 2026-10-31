@@ -16,6 +16,9 @@
   .joy-thumb { background:radial-gradient(circle,#e67e22,#a04000); border:2px solid #f39c12; }
   .btn-action { background:radial-gradient(circle,rgba(50,60,70,.8),rgba(20,25,30,.9)); border:2px solid rgba(255,255,255,.3); touch-action:none; }
   .btn-action:active { transform:scale(.92); border-color:#e67e22; }
+  input { user-select:text; -webkit-user-select:text; }
+  #menu > :first-child { margin-top:auto; }
+  #menu > :last-child { margin-bottom:auto; }
   .glass { background:rgba(15,25,20,.88); backdrop-filter:blur(10px); }
 </style>
 </head>
@@ -58,9 +61,14 @@
   </div>
 
   <!-- MENU -->
-  <div id="menu" class="absolute inset-0 glass flex flex-col items-center justify-center p-4 z-20 overflow-y-auto">
+  <div id="menu" class="absolute inset-0 glass flex flex-col items-center p-4 z-20 overflow-y-auto">
     <h1 class="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-amber-600 mb-1">SHADOW FIGHT 2D</h1>
-    <p class="text-amber-200/70 text-xs mb-4">Võ thuật bóng đêm PvP Online</p>
+    <p class="text-amber-200/70 text-xs mb-2">Võ thuật bóng đêm PvP Online</p>
+    <div class="flex items-center gap-2 text-[11px] mb-3 flex-wrap justify-center">
+      <span id="accText" class="text-stone-400">Chưa đăng nhập</span>
+      <button id="btnAuth" class="px-2.5 py-1 rounded bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold">Đăng nhập / Đăng ký</button>
+      <button id="btnStats" class="px-2.5 py-1 rounded bg-stone-800 border border-amber-500/40 text-amber-300 font-bold">🏆 Thành tích</button>
+    </div>
 
     <div id="nameBox" class="w-full max-w-sm bg-stone-900/90 border border-amber-500/40 p-4 rounded-xl space-y-3">
       <h2 class="text-center font-bold text-amber-400 text-sm">NHẬP TÊN NGƯỜI CHƠI</h2>
@@ -139,7 +147,36 @@
     </div>
   </div>
 
-  <div id="toast" class="absolute top-16 left-1/2 -translate-x-1/2 bg-stone-900/95 border border-amber-500/50 text-amber-200 text-xs px-4 py-2 rounded-lg z-40 hidden"></div>
+  <!-- AUTH -->
+  <div id="authModal" class="absolute inset-0 bg-black/85 flex z-[45] hidden p-3 overflow-y-auto">
+    <div class="w-full max-w-xs bg-stone-900 border border-amber-500/40 rounded-xl p-4 space-y-2 m-auto">
+      <div class="flex gap-2">
+        <button id="auLogin" class="flex-1 py-1.5 rounded text-xs font-bold border border-amber-500/40">Đăng nhập</button>
+        <button id="auReg" class="flex-1 py-1.5 rounded text-xs font-bold border border-amber-500/40">Đăng ký</button>
+      </div>
+      <input id="auUser" maxlength="12" autocomplete="username" autocapitalize="none" placeholder="Tên đăng nhập (3-12 ký tự: chữ, số, _)" class="w-full bg-stone-950 border border-amber-900 focus:border-amber-500 text-amber-100 text-sm rounded px-3 py-2 outline-none">
+      <input id="auPass" type="password" autocomplete="current-password" placeholder="Mật khẩu (tối thiểu 6 ký tự)" class="w-full bg-stone-950 border border-amber-900 focus:border-amber-500 text-amber-100 text-sm rounded px-3 py-2 outline-none">
+      <div id="auMsg" class="text-[11px] min-h-[1rem] text-center"></div>
+      <button id="auSubmit" class="w-full bg-amber-600 hover:bg-amber-500 text-stone-950 font-black py-2 rounded text-sm">Đăng nhập</button>
+      <button id="auClose" class="w-full bg-stone-800 hover:bg-stone-700 text-stone-300 py-1.5 rounded text-xs">Đóng</button>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div id="statsModal" class="absolute inset-0 bg-black/85 flex z-[45] hidden p-3 overflow-y-auto">
+    <div class="w-full max-w-sm bg-stone-900 border border-amber-500/40 rounded-xl p-3 m-auto">
+      <div class="flex gap-2 mb-2">
+        <button id="stF" class="flex-1 py-1.5 rounded text-xs font-bold border border-amber-500/40">⚔️ Shadow Fight</button>
+        <button id="stT" class="flex-1 py-1.5 rounded text-xs font-bold border border-amber-500/40">❌⭕ Tic Tac Toe</button>
+      </div>
+      <div id="stMine" class="text-xs text-amber-300 mb-2 text-center"></div>
+      <div id="stList" class="text-xs space-y-1"></div>
+      <p class="text-[10px] text-stone-500 mt-2 text-center">T = thắng · B = bại · H = hoà (tính khi đấu máy hoặc online)</p>
+      <button id="stClose" class="mt-2 w-full bg-stone-800 hover:bg-stone-700 text-stone-300 py-1.5 rounded text-xs">Đóng</button>
+    </div>
+  </div>
+
+  <div id="toast" class="absolute top-16 left-1/2 -translate-x-1/2 bg-stone-900/95 border border-amber-500/50 text-amber-200 text-xs px-4 py-2 rounded-lg z-50 hidden"></div>
 </div>
 
 <script>
@@ -328,6 +365,10 @@ function endGame(fromRemote) {
   if (over) return;
   over = true; running = false;
   let title = 'HOÀ NHAU!', desc = 'Hai cao thủ đồng sức đồng tài.';
+  if (mode === 'AI' || mode === 'HOST' || mode === 'GUEST') {
+    const mine = mode === 'GUEST' ? p2.hp : p1.hp, theirs = mode === 'GUEST' ? p1.hp : p2.hp;
+    recordResult('fight', mine > theirs ? 'win' : mine < theirs ? 'loss' : 'draw');
+  }
   const n1 = mode === 'GUEST' ? oppName : playerName;
   const n2 = mode === 'AI' ? 'Máy' : mode === 'LOCAL2P' ? 'Người chơi 2' : mode === 'GUEST' ? playerName : oppName;
   if (p1.hp > p2.hp) { title = n1.toUpperCase() + ' THẮNG!'; desc = 'Đối thủ đã gục ngã.'; }
@@ -375,7 +416,10 @@ function simulate() {
 
   if (++ticks % 60 === 0 && timer > 0) timer--;
   if (p1.hp <= 0 || p2.hp <= 0 || timer <= 0) endGame();
-  if (mode === 'HOST' && ticks % 3 === 0) broadcastState();
+  if (mode === 'HOST') {
+    if (over) [0, 120, 300, 600].forEach(d => setTimeout(broadcastState, d));
+    else if (ticks % 3 === 0) broadcastState();
+  }
 }
 
 function broadcastState() {
@@ -552,7 +596,7 @@ function tRender(){
   $('tStatus').textContent=s;
   $('tRematch').classList.toggle('hidden',!(T.over&&!T.msg&&T.mode!=='GUEST'));
 }
-function tPlay(i,m){T.b[i]=m;T.turn=m==='X'?'O':'X';const r=tWin(T.b);T.res=r;if(r){T.over=true;T.score[r.w]++;}}
+function tPlay(i,m){T.b[i]=m;T.turn=m==='X'?'O':'X';const r=tWin(T.b);T.res=r;if(r){T.over=true;T.score[r.w]++;if(T.mode==='AI'||T.mode==='HOST')tReport(r);}}
 function tNewRound(){clearTimeout(T.aiT);T.b=Array(9).fill('');T.over=false;T.res=null;T.msg='';T.starter=T.starter==='X'?'O':'X';T.turn=T.starter;}
 function tStart(mode){
   T.mode=mode;T.started=true;T.score={X:0,O:0,D:0};T.starter='O';T.me=mode==='GUEST'?'O':'X';tNewRound();
@@ -584,7 +628,9 @@ function tAI(){
 }
 
 // Online (Supabase Realtime, host là trọng tài)
-function tBroadcast(){if(T.ch)T.ch.send({type:'broadcast',event:'board',payload:{b:T.b,turn:T.turn,over:T.over,score:T.score}});}
+function tReport(r){recordResult('ttt',r.w==='D'?'draw':r.w===T.me?'win':'loss');}
+function tSend(){if(T.ch)T.ch.send({type:'broadcast',event:'board',payload:{b:T.b,turn:T.turn,over:T.over,score:T.score}});}
+function tBroadcast(){tSend();if(T.over)[200,500].forEach(d=>setTimeout(()=>{if(T.ch&&T.over)tSend();},d));}
 function tOpen(code){
   T.code=code;
   T.ch=sb.channel('ttt_room_'+code,{config:{broadcast:{self:false,ack:false}}});
@@ -607,7 +653,7 @@ function tOpen(code){
   });
   T.ch.on('broadcast',{event:'board'},({payload})=>{
     if(T.mode!=='GUEST'||!T.started)return;
-    T.b=payload.b;T.turn=payload.turn;T.over=payload.over;T.score=payload.score;T.res=tWin(T.b);T.msg='';tRender();
+    const was=T.over;T.b=payload.b;T.turn=payload.turn;T.over=payload.over;T.score=payload.score;T.res=tWin(T.b);T.msg='';if(T.over&&!was&&T.res)tReport(T.res);tRender();
   });
   T.ch.on('broadcast',{event:'leave'},({payload})=>{
     if(payload.id===myId)return;
@@ -669,6 +715,97 @@ $('tRematch').onclick=()=>{
 };
 $('tMenu').onclick=tToMenu;
 window.addEventListener('resize',()=>{if(T.mode)tRender();});
+
+// ================= ACCOUNT & STATS =================
+let user=null, authTab='login', statGame='fight';
+const uName=u=>(u&&(u.user_metadata&&u.user_metadata.username||(u.email||'').split('@')[0]))||'Player';
+function applyUser(u){
+  user=u;
+  const menuOn=!$('menu').classList.contains('hidden');
+  if(u){
+    playerName=uName(u);$('dispName').textContent=playerName;
+    $('accText').textContent='👤 '+playerName;$('btnAuth').textContent='Đăng xuất';
+    $('btnRename').classList.add('hidden');
+    if(menuOn){show('nameBox',false);show('modeBox',true);}
+  } else {
+    $('accText').textContent='Chưa đăng nhập (không lưu thành tích)';$('btnAuth').textContent='Đăng nhập / Đăng ký';
+    $('btnRename').classList.remove('hidden');
+  }
+}
+sb.auth.onAuthStateChange((ev,session)=>{
+  applyUser(session?session.user:null);
+  if(ev==='SIGNED_OUT'&&!$('menu').classList.contains('hidden')){show('modeBox',false);show('nameBox',true);}
+});
+sb.auth.getSession().then(({data})=>applyUser(data.session?data.session.user:null));
+
+function tabStyle(ids,active){ids.forEach(([id,k])=>{const e=$(id),on=active===k;
+  e.classList.toggle('bg-amber-600',on);e.classList.toggle('text-stone-950',on);
+  e.classList.toggle('bg-stone-800',!on);e.classList.toggle('text-amber-200',!on);});}
+function setAuthTab(t){
+  authTab=t;$('auSubmit').textContent=t==='reg'?'Tạo tài khoản':'Đăng nhập';
+  $('auPass').autocomplete=t==='reg'?'new-password':'current-password';$('auMsg').textContent='';
+  tabStyle([['auLogin','login'],['auReg','reg']],t);
+}
+function authMsg(t,ok){const m=$('auMsg');m.textContent=t;m.className='text-[11px] min-h-[1rem] text-center '+(ok?'text-green-400':'text-red-400');}
+async function doAuth(){
+  const name=$('auUser').value.trim(),pass=$('auPass').value;
+  if(!/^[A-Za-z0-9_]{3,12}$/.test(name))return authMsg('Tên đăng nhập 3-12 ký tự: chữ, số hoặc _');
+  if(pass.length<6)return authMsg('Mật khẩu tối thiểu 6 ký tự');
+  const email=name.toLowerCase()+'@shadowfight.app';
+  $('auSubmit').disabled=true;authMsg('Đang xử lý...',true);
+  try{
+    if(authTab==='reg'){
+      const {data,error}=await sb.auth.signUp({email,password:pass,options:{data:{username:name}}});
+      if(error)throw error;
+      if(data.session){show('authModal',false);toast('Đăng ký thành công!');}
+      else authMsg('Tên này đã được dùng hoặc Supabase đang bắt xác nhận email.');
+    } else {
+      const {error}=await sb.auth.signInWithPassword({email,password:pass});
+      if(error)throw error;
+      show('authModal',false);toast('Đăng nhập thành công!');
+    }
+  }catch(e){
+    const m=e.message||'Lỗi không xác định';
+    authMsg(/invalid login/i.test(m)?'Sai tên đăng nhập hoặc mật khẩu':/already|registered/i.test(m)?'Tên đăng nhập đã tồn tại':/not confirmed|confirm/i.test(m)?'Supabase đang bắt xác nhận email, hãy tắt "Confirm email"':m);
+  }
+  $('auSubmit').disabled=false;
+}
+$('btnAuth').onclick=()=>{if(user)sb.auth.signOut();else{setAuthTab('login');show('authModal',true);}};
+$('auLogin').onclick=()=>setAuthTab('login');$('auReg').onclick=()=>setAuthTab('reg');
+$('auSubmit').onclick=doAuth;$('auClose').onclick=()=>show('authModal',false);
+$('auUser').addEventListener('keydown',e=>{if(e.key==='Enter')$('auPass').focus();});
+$('auPass').addEventListener('keydown',e=>{if(e.key==='Enter')doAuth();});
+
+function recordResult(game,res){
+  if(!user)return;
+  sb.rpc('record_result',{p_game:game,p_result:res}).then(({error})=>{
+    toast(error?'Không lưu được thành tích':res==='win'?'🏆 Đã lưu thành tích: Thắng':res==='loss'?'Đã lưu thành tích: Thua':'Đã lưu thành tích: Hoà');
+  });
+}
+async function loadStats(){
+  tabStyle([['stF','fight'],['stT','ttt']],statGame);
+  const list=$('stList'),mine=$('stMine');list.textContent='Đang tải...';mine.textContent='';
+  const q=sb.from('player_stats').select('user_id,username,wins,losses,draws').eq('game',statGame).order('wins',{ascending:false}).limit(10);
+  const {data,error}=await q;
+  if(error){list.textContent='Chưa tải được bảng xếp hạng (đã chạy supabase_setup.sql chưa?)';return;}
+  list.textContent='';
+  if(!data.length)list.textContent='Chưa có dữ liệu.';
+  data.forEach((r,i)=>{
+    const row=document.createElement('div');
+    row.className='grid grid-cols-[1.5rem_1fr_auto] gap-2 px-2 py-1 rounded '+(user&&r.user_id===user.id?'bg-amber-600/25':'bg-stone-800/60');
+    [String(i+1),r.username,r.wins+'T · '+r.losses+'B · '+r.draws+'H'].forEach((t,k)=>{
+      const s=document.createElement('span');s.textContent=t;
+      s.className=k===1?'truncate text-amber-200':k===2?'text-stone-400':'text-stone-500';row.appendChild(s);});
+    list.appendChild(row);
+  });
+  if(!user){mine.textContent='Đăng nhập để lưu thành tích của bạn';return;}
+  const {data:me}=await sb.from('player_stats').select('wins,losses,draws').eq('game',statGame).eq('user_id',user.id).maybeSingle();
+  mine.textContent=me?'Của bạn: '+me.wins+' thắng · '+me.losses+' thua · '+me.draws+' hoà':'Bạn chưa có ván nào được lưu';
+}
+$('btnStats').onclick=()=>{show('statsModal',true);loadStats();};
+$('stF').onclick=()=>{statGame='fight';loadStats();};$('stT').onclick=()=>{statGame='ttt';loadStats();};
+$('stClose').onclick=()=>show('statsModal',false);
+setAuthTab('login');
 
 requestAnimationFrame(frame);
 </script>
