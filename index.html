@@ -74,6 +74,11 @@
         <button id="btnRename" class="text-amber-300 underline">Đổi tên</button>
       </div>
       <div class="flex gap-2">
+        <button id="tabF" class="flex-1 py-2 rounded-lg text-xs font-bold border border-amber-500/40">⚔️ Shadow Fight</button>
+        <button id="tabT" class="flex-1 py-2 rounded-lg text-xs font-bold border border-amber-500/40">❌⭕ Tic Tac Toe</button>
+      </div>
+      <div id="fightPanel" class="space-y-2">
+      <div class="flex gap-2">
         <button id="btnAI" class="flex-1 py-2.5 bg-stone-800 hover:bg-stone-700 border border-stone-500 rounded-lg font-bold text-amber-200 text-xs">🤖 Đấu máy</button>
         <button id="btn2P" class="flex-1 py-2.5 bg-stone-800 hover:bg-stone-700 border border-stone-500 rounded-lg font-bold text-amber-200 text-xs">👥 2 người 1 máy</button>
       </div>
@@ -86,6 +91,22 @@
         </div>
       </div>
       <p class="text-[10px] text-stone-400 text-center leading-relaxed">Phím: <b>A/D</b> di chuyển · <b>W</b> nhảy · <b>S</b> cúi (né đòn cao) · <b>J</b> đấm · <b>K</b> đá · <b>U</b> kiếm.<br>P2 (2 người 1 máy): mũi tên + 1/2/3</p>
+      </div>
+      <div id="tttPanel" class="space-y-2 hidden">
+        <div class="flex gap-2">
+          <button id="tPlayAI" class="flex-1 py-2.5 bg-stone-800 hover:bg-stone-700 border border-stone-500 rounded-lg font-bold text-amber-200 text-xs">🤖 Đấu máy</button>
+          <button id="tPlayLocal" class="flex-1 py-2.5 bg-stone-800 hover:bg-stone-700 border border-stone-500 rounded-lg font-bold text-amber-200 text-xs">👥 2 người 1 máy</button>
+        </div>
+        <div class="text-center text-[10px] text-amber-500 uppercase tracking-widest">Online PvP</div>
+        <div class="flex gap-2">
+          <button id="tCreateBtn" class="flex-1 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 text-stone-950 font-black rounded-lg text-xs">➕ Tạo phòng</button>
+          <div class="flex-1 flex gap-1">
+            <input id="tInRoom" maxlength="4" inputmode="numeric" placeholder="Mã" class="w-14 bg-stone-950 border border-amber-800 rounded text-center text-amber-300 font-mono font-bold text-sm outline-none">
+            <button id="tJoinBtn" class="flex-1 py-2.5 bg-stone-800 border border-amber-500/50 text-amber-400 font-bold rounded-lg text-xs">Vào phòng</button>
+          </div>
+        </div>
+        <p class="text-[10px] text-stone-400 text-center">Chủ phòng cầm ✖. Người đi trước đổi luân phiên mỗi ván.<br>Máy thỉnh thoảng đi sai nên vẫn thắng được.</p>
+      </div>
     </div>
   </div>
 
@@ -104,6 +125,17 @@
     <div class="flex gap-2">
       <button id="btnRematch" class="px-5 py-2 bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold rounded-lg text-sm">Chơi lại</button>
       <button id="btnMenu" class="px-5 py-2 bg-stone-700 hover:bg-stone-600 font-bold rounded-lg text-sm">Về menu</button>
+    </div>
+  </div>
+
+  <!-- TIC TAC TOE -->
+  <div id="ttt" class="absolute inset-0 bg-black/90 flex flex-col items-center justify-center gap-1.5 z-20 hidden">
+    <div class="flex justify-between w-full max-w-md px-3 text-[11px] font-bold text-amber-300"><span id="tX"></span><span id="tMid" class="text-stone-400 font-mono"></span><span id="tO"></span></div>
+    <div id="tStatus" class="text-amber-200 font-bold text-sm text-center h-5"></div>
+    <div id="tBoard" class="grid gap-2 shrink-0" style="grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr))"></div>
+    <div class="flex gap-2">
+      <button id="tRematch" class="px-4 py-1.5 bg-amber-600 hover:bg-amber-500 text-stone-950 font-bold rounded-lg text-xs hidden">Chơi lại</button>
+      <button id="tMenu" class="px-4 py-1.5 bg-stone-700 hover:bg-stone-600 font-bold rounded-lg text-xs">Về menu</button>
     </div>
   </div>
 
@@ -486,7 +518,7 @@ $('btnJoin').onclick = () => {
   if (!/^\d{4}$/.test(c)) return toast('Nhập mã phòng 4 số!');
   joinRoom(c);
 };
-$('btnCancel').onclick = toMenu;
+$('btnCancel').onclick = () => T.mode ? tToMenu() : toMenu();
 $('btnMenu').onclick = toMenu;
 $('btnRematch').onclick = () => {
   if (mode === 'HOST') {
@@ -494,6 +526,149 @@ $('btnRematch').onclick = () => {
     startGame(); channel.send({ type:'broadcast', event:'start', payload:{ to:guestId, name:playerName } });
   } else startGame();
 };
+
+// ================= TIC TAC TOE =================
+const LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+const T={mode:null,b:Array(9).fill(''),turn:'X',me:'X',over:false,res:null,starter:'O',score:{X:0,O:0,D:0},names:{X:'',O:''},ch:null,code:null,guestId:null,joined:false,started:false,joinTimer:null,aiT:null,msg:''};
+const tBoard=$('tBoard');
+for(let i=0;i<9;i++){const c=document.createElement('button');c.className='w-full h-full min-w-0 min-h-0 p-0 overflow-hidden leading-none rounded-lg bg-stone-900 border-2 border-amber-700/60 font-black flex items-center justify-center';c.onclick=()=>tClick(i);tBoard.appendChild(c);}
+
+function tWin(b){for(const [a,c,d] of LINES) if(b[a]&&b[a]===b[c]&&b[a]===b[d]) return {w:b[a],line:[a,c,d]}; return b.every(Boolean)?{w:'D',line:[]}:null;}
+function tRender(){
+  const sh=$('stage').clientHeight, bs=Math.round(sh*0.56), fs=Math.round(bs/3*0.6);
+  tBoard.style.width=tBoard.style.height=bs+'px';
+  [...tBoard.children].forEach((c,i)=>{
+    const v=T.b[i], win=T.res&&T.res.line.includes(i);
+    c.textContent=v; c.style.fontSize=fs+'px'; c.style.color=v==='X'?'#fbbf24':'#60a5fa';
+    c.style.background=win?'rgba(34,197,94,.35)':''; c.style.borderColor=win?'#22c55e':'';
+  });
+  $('tX').textContent='✖ '+T.names.X+': '+T.score.X;
+  $('tO').textContent='⭕ '+T.names.O+': '+T.score.O;
+  $('tMid').textContent='Hoà '+T.score.D+(T.code?' · Phòng '+T.code:'');
+  let s;
+  if(T.msg) s=T.msg;
+  else if(T.over&&T.res) s=T.res.w==='D'?'Hoà nhau!':T.names[T.res.w]+' thắng! 🎉';
+  else s='Lượt: '+T.names[T.turn]+(T.mode!=='LOCAL'&&T.turn===T.me?' (bạn)':'');
+  $('tStatus').textContent=s;
+  $('tRematch').classList.toggle('hidden',!(T.over&&!T.msg&&T.mode!=='GUEST'));
+}
+function tPlay(i,m){T.b[i]=m;T.turn=m==='X'?'O':'X';const r=tWin(T.b);T.res=r;if(r){T.over=true;T.score[r.w]++;}}
+function tNewRound(){clearTimeout(T.aiT);T.b=Array(9).fill('');T.over=false;T.res=null;T.msg='';T.starter=T.starter==='X'?'O':'X';T.turn=T.starter;}
+function tStart(mode){
+  T.mode=mode;T.started=true;T.score={X:0,O:0,D:0};T.starter='O';T.me=mode==='GUEST'?'O':'X';tNewRound();
+  show('menu',false);show('wait',false);show('ttt',true);tRender();
+  if(mode==='AI'&&T.turn!==T.me)T.aiT=setTimeout(tAI,500);
+}
+function tClick(i){
+  if(T.over||T.b[i]||!T.mode) return;
+  if(T.mode==='LOCAL'){tPlay(i,T.turn);}
+  else if(T.turn!==T.me) return;
+  else if(T.mode==='GUEST'){T.ch.send({type:'broadcast',event:'move',payload:{id:myId,i}});return;}
+  else{tPlay(i,T.me);if(T.mode==='HOST')tBroadcast();else if(!T.over)T.aiT=setTimeout(tAI,450);}
+  tRender();
+}
+
+// AI (minimax, đôi khi đi ngẫu nhiên)
+function tMM(b,t,ai){
+  const r=tWin(b);if(r)return r.w===ai?1:r.w==='D'?0:-1;
+  let best=t===ai?-2:2;
+  for(let i=0;i<9;i++)if(!b[i]){b[i]=t;const s=tMM(b,t==='X'?'O':'X',ai);b[i]='';best=t===ai?Math.max(best,s):Math.min(best,s);}
+  return best;
+}
+function tAI(){
+  if(T.mode!=='AI'||T.over)return;
+  const ai=T.me==='X'?'O':'X',em=[...T.b.keys()].filter(i=>!T.b[i]);
+  let mv=em[Math.random()*em.length|0];
+  if(Math.random()>0.25){let best=-2;const b=[...T.b];for(const i of em){b[i]=ai;const s=tMM(b,T.me,ai);b[i]='';if(s>best){best=s;mv=i;}}}
+  tPlay(mv,ai);tRender();
+}
+
+// Online (Supabase Realtime, host là trọng tài)
+function tBroadcast(){if(T.ch)T.ch.send({type:'broadcast',event:'board',payload:{b:T.b,turn:T.turn,over:T.over,score:T.score}});}
+function tOpen(code){
+  T.code=code;
+  T.ch=sb.channel('ttt_room_'+code,{config:{broadcast:{self:false,ack:false}}});
+  T.ch.on('broadcast',{event:'join'},({payload})=>{
+    if(T.mode!=='HOST')return;
+    if(!T.guestId||T.guestId===payload.id){
+      T.guestId=payload.id;T.names.O=payload.name||'Đối thủ';
+      if(!T.joined){T.joined=true;tStart('HOST');}
+      T.ch.send({type:'broadcast',event:'start',payload:{to:T.guestId,name:T.names.X}});tBroadcast();
+    } else T.ch.send({type:'broadcast',event:'full',payload:{to:payload.id}});
+  });
+  T.ch.on('broadcast',{event:'start'},({payload})=>{
+    if(T.mode!=='GUEST'||payload.to!==myId||T.started)return;
+    clearInterval(T.joinTimer);T.names={X:payload.name||'Chủ phòng',O:playerName};tStart('GUEST');
+  });
+  T.ch.on('broadcast',{event:'full'},({payload})=>{if(T.mode==='GUEST'&&payload.to===myId){toast('Phòng đã đủ người!');tToMenu();}});
+  T.ch.on('broadcast',{event:'move'},({payload})=>{
+    if(T.mode!=='HOST'||payload.id!==T.guestId||T.over||T.turn!=='O'||T.b[payload.i])return;
+    tPlay(payload.i,'O');tBroadcast();tRender();
+  });
+  T.ch.on('broadcast',{event:'board'},({payload})=>{
+    if(T.mode!=='GUEST'||!T.started)return;
+    T.b=payload.b;T.turn=payload.turn;T.over=payload.over;T.score=payload.score;T.res=tWin(T.b);T.msg='';tRender();
+  });
+  T.ch.on('broadcast',{event:'leave'},({payload})=>{
+    if(payload.id===myId)return;
+    if(T.mode==='HOST'&&T.joined){T.joined=false;T.guestId=null;T.over=true;T.msg='Đối thủ đã thoát';tRender();}
+    else if(T.mode==='GUEST'&&T.started){T.over=true;T.msg='Chủ phòng đã thoát';tRender();}
+  });
+  return T.ch;
+}
+function tCreate(){
+  const code=String(1000+Math.random()*9000|0);
+  T.mode='HOST';T.guestId=null;T.joined=false;T.started=false;T.names={X:playerName,O:'Đối thủ'};
+  tOpen(code).subscribe(st=>{
+    if(st==='SUBSCRIBED'){$('waitCode').textContent=code;$('waitMsg').textContent='Đang chờ đối thủ (Tic Tac Toe)...';show('menu',false);show('wait',true);}
+    else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'){toast('Không kết nối được Supabase');tToMenu();}
+  });
+}
+function tJoin(code){
+  T.mode='GUEST';T.started=false;
+  tOpen(code).subscribe(st=>{
+    if(st==='SUBSCRIBED'){
+      $('waitCode').textContent=code;$('waitMsg').textContent='Đang vào phòng...';show('menu',false);show('wait',true);
+      let tries=0;
+      const send=()=>{
+        if(++tries>6){toast('Không tìm thấy phòng '+code);tToMenu();return;}
+        T.ch.send({type:'broadcast',event:'join',payload:{id:myId,name:playerName}});
+      };
+      send();T.joinTimer=setInterval(send,1000);
+    } else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'){toast('Không kết nối được Supabase');tToMenu();}
+  });
+}
+function tToMenu(){
+  clearTimeout(T.aiT);clearInterval(T.joinTimer);
+  if(T.ch){try{T.ch.send({type:'broadcast',event:'leave',payload:{id:myId}});}catch(e){}sb.removeChannel(T.ch);T.ch=null;}
+  Object.assign(T,{mode:null,code:null,guestId:null,joined:false,started:false,msg:''});
+  show('ttt',false);show('wait',false);show('menu',true);show('nameBox',false);show('modeBox',true);setTab('t');
+}
+
+// Tabs + nút
+function setTab(t){
+  show('fightPanel',t==='f');show('tttPanel',t==='t');
+  [['tabF','f'],['tabT','t']].forEach(([id,k])=>{const e=$(id),on=t===k;
+    e.classList.toggle('bg-amber-600',on);e.classList.toggle('text-stone-950',on);
+    e.classList.toggle('bg-stone-800',!on);e.classList.toggle('text-amber-200',!on);});
+}
+$('tabF').onclick=()=>setTab('f');$('tabT').onclick=()=>setTab('t');setTab('f');
+$('tPlayAI').onclick=()=>{T.names={X:playerName,O:'Máy'};T.code=null;tStart('AI');};
+$('tPlayLocal').onclick=()=>{T.names={X:playerName,O:'Người chơi 2'};T.code=null;tStart('LOCAL');};
+$('tCreateBtn').onclick=tCreate;
+$('tJoinBtn').onclick=()=>{
+  const c=$('tInRoom').value.trim();
+  if(!/^\d{4}$/.test(c))return toast('Nhập mã phòng 4 số!');
+  T.names={X:'Chủ phòng',O:playerName};tJoin(c);
+};
+$('tRematch').onclick=()=>{
+  if(T.mode==='GUEST'||!T.over)return;
+  tNewRound();tRender();
+  if(T.mode==='HOST')tBroadcast();
+  if(T.mode==='AI'&&T.turn!==T.me)T.aiT=setTimeout(tAI,500);
+};
+$('tMenu').onclick=tToMenu;
+window.addEventListener('resize',()=>{if(T.mode)tRender();});
 
 requestAnimationFrame(frame);
 </script>
