@@ -82,8 +82,9 @@
         <button id="btnRename" class="text-amber-300 underline">Đổi tên</button>
       </div>
       <div class="flex gap-2">
-        <button id="tabF" class="flex-1 py-2 rounded-lg text-xs font-bold border border-amber-500/40">⚔️ Shadow Fight</button>
-        <button id="tabT" class="flex-1 py-2 rounded-lg text-xs font-bold border border-amber-500/40">❌⭕ Tic Tac Toe</button>
+        <button id="tabF" class="flex-1 py-2 rounded-lg text-[11px] font-bold border border-amber-500/40">⚔️ Shadow Fight</button>
+        <button id="tabT" class="flex-1 py-2 rounded-lg text-[11px] font-bold border border-amber-500/40">❌⭕ Tic Tac Toe</button>
+        <button id="tabZ" class="flex-1 py-2 rounded-lg text-[11px] font-bold border border-amber-500/40">🧟 Zombie</button>
       </div>
       <div id="fightPanel" class="space-y-2">
       <div class="flex gap-2">
@@ -114,6 +115,11 @@
           </div>
         </div>
         <p class="text-[10px] text-stone-400 text-center">Chủ phòng cầm ✖. Người đi trước đổi luân phiên mỗi ván.<br>Máy thỉnh thoảng đi sai nên vẫn thắng được.</p>
+      </div>
+      <div id="zPanel" class="space-y-2 hidden">
+        <p class="text-xs text-stone-300 text-center leading-relaxed">🧟 Sinh tồn trước biển zombie: nhặt XP, lên cấp, nâng cấp vũ khí, chọn nhân vật và trang phục. Chơi đơn.</p>
+        <button id="zPlay" class="w-full py-3 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-black rounded-lg text-sm">▶ Chơi Zombie Survival</button>
+        <p class="text-[10px] text-stone-400 text-center leading-relaxed">WASD / mũi tên di chuyển · Space dùng kỹ năng.<br>Điện thoại: joystick + nút KỸ NĂNG, nên xoay ngang màn hình.</p>
       </div>
     </div>
   </div>
@@ -177,6 +183,11 @@
   </div>
 
   <div id="toast" class="absolute top-16 left-1/2 -translate-x-1/2 bg-stone-900/95 border border-amber-500/50 text-amber-200 text-xs px-4 py-2 rounded-lg z-50 hidden"></div>
+</div>
+
+<div id="zScreen" class="fixed inset-0 bg-black z-[48] hidden">
+  <iframe id="zFrame" class="w-full h-full border-0" allow="autoplay" title="Zombie Survival"></iframe>
+  <button id="zBack" class="absolute top-1 left-1/2 -translate-x-1/2 px-3 py-1 rounded-lg bg-black/70 border border-amber-500/50 text-amber-300 text-[11px] font-bold">✕ Về menu</button>
 </div>
 
 <script>
@@ -693,12 +704,12 @@ function tToMenu(){
 
 // Tabs + nút
 function setTab(t){
-  show('fightPanel',t==='f');show('tttPanel',t==='t');
-  [['tabF','f'],['tabT','t']].forEach(([id,k])=>{const e=$(id),on=t===k;
+  show('fightPanel',t==='f');show('tttPanel',t==='t');show('zPanel',t==='z');
+  [['tabF','f'],['tabT','t'],['tabZ','z']].forEach(([id,k])=>{const e=$(id),on=t===k;
     e.classList.toggle('bg-amber-600',on);e.classList.toggle('text-stone-950',on);
     e.classList.toggle('bg-stone-800',!on);e.classList.toggle('text-amber-200',!on);});
 }
-$('tabF').onclick=()=>setTab('f');$('tabT').onclick=()=>setTab('t');setTab('f');
+$('tabF').onclick=()=>setTab('f');$('tabT').onclick=()=>setTab('t');$('tabZ').onclick=()=>setTab('z');setTab('f');
 $('tPlayAI').onclick=()=>{T.names={X:playerName,O:'Máy'};T.code=null;tStart('AI');};
 $('tPlayLocal').onclick=()=>{T.names={X:playerName,O:'Người chơi 2'};T.code=null;tStart('LOCAL');};
 $('tCreateBtn').onclick=tCreate;
@@ -806,6 +817,20 @@ $('btnStats').onclick=()=>{show('statsModal',true);loadStats();};
 $('stF').onclick=()=>{statGame='fight';loadStats();};$('stT').onclick=()=>{statGame='ttt';loadStats();};
 $('stClose').onclick=()=>show('statsModal',false);
 setAuthTab('login');
+
+// ================= ZOMBIE (zombie.html trong iframe) =================
+function zOpen(){
+  const f=$('zFrame');
+  f.onload=()=>{try{f.contentWindow.focus();}catch(e){}};
+  f.src='zombie.html';show('zScreen',true);
+}
+function zClose(){show('zScreen',false);$('zFrame').onload=null;$('zFrame').src='about:blank';setTab('z');}
+$('zPlay').onclick=()=>{
+  fetch('zombie.html',{method:'HEAD'})
+    .then(r=>{if(r.ok)zOpen();else toast('Chưa có file zombie.html cạnh index.html');})
+    .catch(zOpen);
+};
+$('zBack').onclick=zClose;
 
 requestAnimationFrame(frame);
 </script>
