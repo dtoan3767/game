@@ -129,6 +129,15 @@
         <p class="text-[10px] text-stone-400 text-center">Đăng nhập để điểm cao của bạn được lưu vào bảng xếp hạng.</p>
         <p class="text-[10px] text-stone-400 text-center leading-relaxed">WASD / mũi tên di chuyển · Space dùng kỹ năng · P/Esc tạm dừng.<br>Điện thoại: joystick + nút KỸ NĂNG, nên xoay ngang màn hình.</p>
       </div>
+
+      <div id="lobbyBox" class="bg-stone-900/80 border border-amber-500/30 rounded-lg p-2">
+        <div class="flex items-center justify-between mb-1">
+          <span class="text-[11px] font-bold text-amber-400">👥 Đang online: <span id="lobbyCount">0</span></span>
+          <label class="flex items-center gap-1 text-[10px] text-stone-400 cursor-pointer select-none"><input id="lobbyDnd" type="checkbox" class="accent-amber-500"> 🔕 Không nhận lời mời</label>
+        </div>
+        <div id="lobbyList" class="space-y-1 max-h-32 overflow-y-auto"></div>
+        <p id="lobbyHint" class="text-[10px] text-stone-500 text-center mt-1">Bấm ⚔️ để mời đấu Shadow Fight, hoặc ❌⭕ để mời chơi Tic Tac Toe.</p>
+      </div>
     </div>
   </div>
 
@@ -198,6 +207,19 @@
       <div id="stList" class="text-xs space-y-1"></div>
       <p class="text-[10px] text-stone-500 mt-2 text-center">T = thắng · B = bại · H = hoà.<br>Online: chỉ tính trận có người thật, cả hai cùng xác nhận.<br>Offline: kết quả đấu máy (Tic Tac Toe chia theo độ khó), cần đăng nhập. "2 người 1 máy" không được tính.<br>Zombie: điểm cao nhất theo từng chế độ, cần đăng nhập để lưu.</p>
       <button id="stClose" class="mt-2 w-full bg-stone-800 hover:bg-stone-700 text-stone-300 py-1.5 rounded text-xs">Đóng</button>
+    </div>
+  </div>
+
+  <div id="inviteBox" class="absolute inset-0 bg-black/70 flex z-[47] hidden p-4">
+    <div class="m-auto w-full max-w-xs bg-stone-900 border border-amber-500/60 rounded-2xl p-5 text-center shadow-2xl">
+      <div class="text-3xl mb-1">📨</div>
+      <p class="text-sm text-stone-300"><b id="invName" class="text-amber-300"></b> mời bạn chơi</p>
+      <p id="invGame" class="text-lg font-black text-amber-400 mb-3"></p>
+      <div class="flex gap-2">
+        <button id="invYes" class="flex-1 py-2.5 bg-gradient-to-r from-green-600 to-emerald-700 text-white font-black rounded-lg text-sm">✔ Chấp nhận</button>
+        <button id="invNo" class="flex-1 py-2.5 bg-stone-700 hover:bg-stone-600 font-bold rounded-lg text-sm">✖ Từ chối</button>
+      </div>
+      <p class="text-[10px] text-stone-500 mt-2">Lời mời tự hết hạn sau <span id="invLeft">30</span> giây.</p>
     </div>
   </div>
 
@@ -2391,7 +2413,8 @@ function openChannel(code) {
   channel.on('broadcast', { event:'join' }, ({ payload }) => {
     if (mode !== 'HOST' || !payload) return;
     const pid = cleanId(payload.id); if (!pid) return;
-    if (!guestId || guestId === pid) {
+    const invOk = !LB.out || LB.out.code !== roomCode || LB.out.to === pid;
+    if (invOk && (!guestId || guestId === pid)) {
       guestId = pid; oppName = cleanName(payload.name, 'Đối thủ'); oppUid = cleanId(payload.uid);
       const first = !guestJoined;
       if (first) { guestJoined = true; matchId = newMid(roomCode); }
@@ -2432,13 +2455,14 @@ function openChannel(code) {
   return channel;
 }
 
-function createRoom() {
+function createRoom(onReady) {
   const code = newCode();
   mode = 'HOST'; guestId = null; guestJoined = false; oppUid = null; matchId = null;
   openChannel(code).subscribe(status => {
     if (status === 'SUBSCRIBED') {
       $('waitCode').textContent = code; $('waitMsg').textContent = 'Đang chờ đối thủ...';
       show('menu', false); show('wait', true);
+      if (typeof onReady === 'function') onReady(code);
     } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') { toast('Không kết nối được Supabase'); toMenu(); }
   });
 }
@@ -2498,7 +2522,7 @@ $('inName').addEventListener('keydown', e => { if (e.key === 'Enter') $('btnEnte
 $('btnRename').onclick = () => { show('modeBox', false); show('nameBox', true); };
 $('btnAI').onclick = () => { mode = 'AI'; roomCode = null; oppName = 'Máy'; startGame(); };
 $('btn2P').onclick = () => { mode = 'LOCAL2P'; roomCode = null; oppName = 'Người chơi 2'; startGame(); };
-$('btnCreate').onclick = createRoom;
+$('btnCreate').onclick = () => createRoom();
 $('btnJoin').onclick = () => {
   const c = $('inRoom').value.trim();
   if (!CODE_RE.test(c)) return toast('Nhập mã phòng 6 số!');
@@ -2588,7 +2612,8 @@ function tOpen(code){
   T.ch.on('broadcast',{event:'join'},({payload})=>{
     if(T.mode!=='HOST'||!payload)return;
     const pid=cleanId(payload.id);if(!pid)return;
-    if(!T.guestId||T.guestId===pid){
+    const invOk=!LB.out||LB.out.code!==T.code||LB.out.to===pid;
+    if(invOk&&(!T.guestId||T.guestId===pid)){
       T.guestId=pid;T.names.O=cleanName(payload.name,'Đối thủ');T.oppUid=cleanId(payload.uid);
       if(!T.joined){T.joined=true;tStart('HOST');}
       T.ch.send({type:'broadcast',event:'start',payload:{to:T.guestId,name:T.names.X,uid:user?user.id:null}});tBroadcast();
@@ -2624,11 +2649,11 @@ function tOpen(code){
   });
   return T.ch;
 }
-function tCreate(){
+function tCreate(onReady){
   const code=newCode();
   T.mode='HOST';T.guestId=null;T.joined=false;T.started=false;T.oppUid=null;T.names={X:playerName,O:'Đối thủ'};
   tOpen(code).subscribe(st=>{
-    if(st==='SUBSCRIBED'){$('waitCode').textContent=code;$('waitMsg').textContent='Đang chờ đối thủ (Tic Tac Toe)...';show('menu',false);show('wait',true);}
+    if(st==='SUBSCRIBED'){$('waitCode').textContent=code;$('waitMsg').textContent='Đang chờ đối thủ (Tic Tac Toe)...';show('menu',false);show('wait',true);if(typeof onReady==='function')onReady(code);}
     else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'){toast('Không kết nối được Supabase');tToMenu();}
   });
 }
@@ -2665,7 +2690,7 @@ function setTDiff(d){tDiff=d;try{localStorage.setItem('ttt_diff',d);}catch(e){}t
 Object.keys(TDIFF).forEach(k=>{$('td'+k).onclick=()=>setTDiff(k);});setTDiff(tDiff);
 $('tPlayAI').onclick=()=>{T.diff=tDiff;T.names={X:playerName,O:'Máy ('+TDIFF[tDiff].label+')'};T.code=null;tStart('AI');};
 $('tPlayLocal').onclick=()=>{T.names={X:playerName,O:'Người chơi 2'};T.code=null;tStart('LOCAL');};
-$('tCreateBtn').onclick=tCreate;
+$('tCreateBtn').onclick=()=>tCreate();
 $('tJoinBtn').onclick=()=>{
   const c=$('tInRoom').value.trim();
   if(!CODE_RE.test(c))return toast('Nhập mã phòng 6 số!');
@@ -2877,6 +2902,138 @@ function zClose(){
   show('zScreen',false);f.onload=null;f.srcdoc='<!DOCTYPE html>';setTab('z');}
 $('zPlay').onclick=zOpen;
 $('zBack').onclick=zClose;
+
+// ================= PHÒNG CHỜ: người chơi online + lời mời =================
+// Dùng Supabase Presence trên kênh chung để biết ai đang truy cập; lời mời gửi bằng broadcast.
+// Lời mời chỉ chứa mã phòng; vào phòng vẫn đi qua đúng luồng tạo/vào phòng có sẵn.
+const LB = { ch:null, peers:[], sig:'', out:null, inc:null, incT:null, incTick:null, lastFrom:{}, ready:false };
+const LB_GAMES = { fight:'⚔️ Shadow Fight', ttt:'❌⭕ Tic Tac Toe' };
+const lbStatus = () => {
+  if ($('lobbyDnd').checked) return 'dnd';
+  const inMenu = !$('menu').classList.contains('hidden') && !$('modeBox').classList.contains('hidden');
+  const inZ = !$('zScreen').classList.contains('hidden');
+  const hasModal = !$('authModal').classList.contains('hidden');
+  return (inMenu && !inZ && !hasModal && mode === 'MENU' && !T.mode) ? 'idle' : 'busy';
+};
+function lbSend(event, payload) { if (LB.ch && LB.ready) LB.ch.send({ type:'broadcast', event, payload }); }
+
+function lbRenderList() {
+  const list = $('lobbyList');
+  list.textContent = '';
+  $('lobbyCount').textContent = LB.peers.length + 1;           // + bản thân
+  if (!LB.peers.length) {
+    const e = document.createElement('div');
+    e.className = 'text-[11px] text-stone-500 text-center py-1';
+    e.textContent = 'Chưa có người chơi nào khác đang online.';
+    list.appendChild(e); return;
+  }
+  LB.peers.forEach(pr => {
+    const row = document.createElement('div');
+    row.className = 'flex items-center gap-1.5 bg-stone-800/70 rounded px-2 py-1';
+    const dot = document.createElement('span');
+    dot.className = 'w-2 h-2 rounded-full shrink-0 ' + (pr.status === 'idle' ? 'bg-green-500' : pr.status === 'dnd' ? 'bg-red-500' : 'bg-yellow-500');
+    const nm = document.createElement('span');
+    nm.className = 'flex-1 truncate text-[12px] text-amber-100'; nm.textContent = pr.name;
+    const st = document.createElement('span');
+    st.className = 'text-[10px] text-stone-500'; st.textContent = pr.status === 'idle' ? 'Rảnh' : pr.status === 'dnd' ? 'Không nhận mời' : 'Đang bận';
+    row.append(dot, nm);
+    if (pr.status !== 'idle') row.appendChild(st);
+    else ['fight', 'ttt'].forEach(g => {
+      const b = document.createElement('button');
+      b.className = 'px-2 py-1 rounded bg-amber-600 hover:bg-amber-500 text-stone-950 text-[11px] font-black';
+      b.textContent = g === 'fight' ? '⚔️' : '❌⭕'; b.title = 'Mời chơi ' + LB_GAMES[g];
+      b.onclick = () => lbInvite(pr, g);
+      row.appendChild(b);
+    });
+    list.appendChild(row);
+  });
+}
+function lbSync() {
+  const st = LB.ch.presenceState(), seen = new Map();
+  Object.keys(st).forEach(k => (st[k] || []).forEach(m => {
+    const id = cleanId(m && m.id);
+    if (!id || id === myId || seen.has(id)) return;
+    const status = ['idle', 'busy', 'dnd'].includes(m.status) ? m.status : 'busy';
+    seen.set(id, { id, name: cleanName(m.name, 'Người chơi'), status });
+  }));
+  LB.peers = [...seen.values()].sort((a, b) => (a.status === 'idle' ? 0 : 1) - (b.status === 'idle' ? 0 : 1)).slice(0, 30);
+  lbRenderList();
+}
+function lbTrack() {
+  if (LB.out && lbStatus() === 'idle') LB.out = null;   // đã về menu: lời mời cũ hết hiệu lực
+  if (!LB.ready) return;
+  const status = lbStatus(), sig = playerName + '|' + status;
+  if (sig === LB.sig) return;
+  LB.sig = sig;
+  LB.ch.track({ id:myId, name:playerName, status }).catch(() => {});
+}
+function lbStart() {
+  if (LB.ch) return;
+  LB.ch = sb.channel('sf_lobby_v1', { config:{ presence:{ key:myId }, broadcast:{ self:false, ack:false } } });
+  LB.ch.on('presence', { event:'sync' }, lbSync);
+  LB.ch.on('broadcast', { event:'invite' }, ({ payload }) => lbOnInvite(payload));
+  LB.ch.on('broadcast', { event:'invite_no' }, ({ payload }) => lbOnReply(payload, 'đã từ chối lời mời'));
+  LB.ch.on('broadcast', { event:'invite_busy' }, ({ payload }) => lbOnReply(payload, 'đang bận hoặc không nhận lời mời'));
+  LB.ch.subscribe(status => {
+    if (status === 'SUBSCRIBED') { LB.ready = true; LB.sig = ''; lbTrack(); }
+    else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') { LB.ready = false; }
+  });
+  setInterval(lbTrack, 1500);   // cập nhật trạng thái rảnh/bận và đổi tên
+}
+
+// ---- Người mời ----
+function lbInvite(peer, game) {
+  if (lbStatus() !== 'idle') return toast('Bạn đang bận, hãy về menu trước');
+  if (LB.out) return toast('Bạn đang có một lời mời chưa được trả lời');
+  const go = code => {
+    LB.out = { to:peer.id, name:peer.name, game, code };
+    lbSend('invite', { to:peer.id, from:myId, name:playerName, game, code });
+    $('waitMsg').textContent = 'Đã mời ' + peer.name + ' (' + LB_GAMES[game] + '), đang chờ phản hồi...';
+    setTimeout(() => {
+      const waiting = LB.out && LB.out.code === code && (game === 'fight' ? (mode === 'HOST' && !guestJoined) : (T.mode === 'HOST' && !T.joined));
+      if (waiting) toast(peer.name + ' chưa phản hồi. Bạn vẫn có thể chờ hoặc huỷ.');
+    }, 35000);
+  };
+  if (game === 'fight') createRoom(go); else tCreate(go);
+}
+function lbOnReply(p, text) {
+  if (!p || !LB.out || cleanId(p.from) !== LB.out.to || cleanId(p.to) !== myId) return;
+  const name = LB.out.name, game = LB.out.game;
+  LB.out = null;
+  toast(name + ' ' + text);
+  const waiting = game === 'fight' ? (mode === 'HOST' && !guestJoined) : (T.mode === 'HOST' && !T.joined);
+  if (waiting) { if (game === 'ttt') tToMenu(); else toMenu(); }
+}
+
+// ---- Người được mời ----
+function lbCloseInvite() {
+  clearInterval(LB.incTick); clearTimeout(LB.incT); LB.inc = null; show('inviteBox', false);
+}
+function lbOnInvite(p) {
+  if (!p || cleanId(p.to) !== myId) return;
+  const from = cleanId(p.from), name = cleanName(p.name, 'Người chơi'), game = p.game, code = p.code;
+  if (!from || from === myId || !LB_GAMES[game] || typeof code !== 'string' || !CODE_RE.test(code)) return;
+  const now = Date.now();
+  if (LB.lastFrom[from] && now - LB.lastFrom[from] < 5000) return;      // chống spam lời mời
+  LB.lastFrom[from] = now;
+  if (lbStatus() !== 'idle' || LB.inc) { lbSend('invite_busy', { to:from, from:myId }); return; }
+  LB.inc = { from, name, game, code };
+  $('invName').textContent = name; $('invGame').textContent = LB_GAMES[game];
+  let left = 30; $('invLeft').textContent = left; show('inviteBox', true);
+  LB.incTick = setInterval(() => { $('invLeft').textContent = --left; }, 1000);
+  LB.incT = setTimeout(() => { const i = LB.inc; lbCloseInvite(); if (i) lbSend('invite_no', { to:i.from, from:myId }); }, 30000);
+}
+$('invNo').onclick = () => { const i = LB.inc; lbCloseInvite(); if (i) lbSend('invite_no', { to:i.from, from:myId }); };
+$('invYes').onclick = () => {
+  const i = LB.inc; lbCloseInvite();
+  if (!i) return;
+  if (mode !== 'MENU' || T.mode) return toast('Bạn đang bận, không thể vào phòng');
+  if (i.game === 'fight') { oppName = i.name; joinRoom(i.code); }
+  else { T.names = { X:i.name, O:playerName }; tJoin(i.code); }
+};
+$('lobbyDnd').onchange = () => { lbTrack(); if ($('lobbyDnd').checked && LB.inc) $('invNo').click(); };
+// Bắt đầu tham gia phòng chờ ngay khi người chơi đã có tên (nhập tên hoặc đăng nhập)
+setInterval(() => { if (!LB.ch && !$('modeBox').classList.contains('hidden')) lbStart(); }, 800);
 
 requestAnimationFrame(frame);
 </script>
