@@ -99,7 +99,7 @@
           <button id="btnJoin" class="flex-1 py-2.5 bg-stone-800 border border-amber-500/50 text-amber-400 font-bold rounded-lg text-xs">Vào phòng</button>
         </div>
       </div>
-      <p class="text-[10px] text-stone-400 text-center leading-relaxed">Phím: <b>A/D</b> di chuyển · <b>W</b> nhảy · <b>S</b> cúi (né đòn cao) · <b>J</b> đấm · <b>K</b> đá · <b>U</b> kiếm.<br>P2 (2 người 1 máy): mũi tên + 1/2/3<br>Thành tích chỉ tính khi cả hai đều đăng nhập và đấu online.</p>
+      <p class="text-[10px] text-stone-400 text-center leading-relaxed">Phím: <b>A/D</b> di chuyển · <b>W</b> nhảy · <b>S</b> cúi (né đòn cao) · <b>J</b> đấm · <b>K</b> đá · <b>U</b> kiếm.<br>P2 (2 người 1 máy): mũi tên + 1/2/3<br>Bảng Online chỉ tính khi cả hai đều đăng nhập và đấu online. Đấu máy được tính vào bảng Offline (cần đăng nhập).</p>
       </div>
       <div id="tttPanel" class="space-y-2 hidden">
         <div class="text-center text-[10px] text-amber-500 uppercase tracking-widest">Độ khó khi đấu máy</div>
@@ -120,7 +120,7 @@
             <button id="tJoinBtn" class="flex-1 py-2.5 bg-stone-800 border border-amber-500/50 text-amber-400 font-bold rounded-lg text-xs">Vào phòng</button>
           </div>
         </div>
-        <p class="text-[10px] text-stone-400 text-center">Chủ phòng cầm ✖. Người đi trước đổi luân phiên mỗi ván.<br>Dễ: máy hay đi sai · Thường: thỉnh thoảng đi sai · Khó: không bao giờ đi sai (cùng lắm là hoà). Đấu máy không tính thành tích.</p>
+        <p class="text-[10px] text-stone-400 text-center">Chủ phòng cầm ✖. Người đi trước đổi luân phiên mỗi ván.<br>Dễ: máy hay đi sai · Thường: thỉnh thoảng đi sai · Khó: không bao giờ đi sai (cùng lắm là hoà). Đấu máy được tính vào bảng Offline (cần đăng nhập); 2 người 1 máy không tính.</p>
       </div>
       <div id="zPanel" class="space-y-2 hidden">
         <p class="text-xs text-stone-300 text-center leading-relaxed">🧟 Sinh tồn trước biển zombie: nhặt XP, lên cấp, nâng cấp vũ khí, chọn nhân vật và trang phục. Chơi đơn.</p>
@@ -184,6 +184,10 @@
         <button id="stT" class="flex-1 py-1.5 rounded text-[11px] font-bold border border-amber-500/40">❌⭕ Tic Tac Toe</button>
         <button id="stZ" class="flex-1 py-1.5 rounded text-[11px] font-bold border border-amber-500/40">🧟 Zombie</button>
       </div>
+      <div id="stMode" class="flex gap-2 mb-2">
+        <button id="smOn" class="flex-1 py-1.5 rounded text-[11px] font-bold border border-amber-500/40">🌐 Online</button>
+        <button id="smOff" class="flex-1 py-1.5 rounded text-[11px] font-bold border border-amber-500/40">🤖 Offline (đấu máy)</button>
+      </div>
       <div id="stDiff" class="flex gap-1 mb-2 hidden">
         <button id="sd_EASY" class="flex-1 py-1 rounded text-[10px] font-bold border border-amber-500/40">DỄ</button>
         <button id="sd_NORMAL" class="flex-1 py-1 rounded text-[10px] font-bold border border-amber-500/40">THƯỜNG</button>
@@ -192,7 +196,7 @@
       </div>
       <div id="stMine" class="text-xs text-amber-300 mb-2 text-center"></div>
       <div id="stList" class="text-xs space-y-1"></div>
-      <p class="text-[10px] text-stone-500 mt-2 text-center">Fight / Tic Tac Toe: T = thắng · B = bại · H = hoà (chỉ tính trận online, cả hai cùng xác nhận).<br>Zombie: điểm cao nhất theo từng chế độ, cần đăng nhập để lưu.</p>
+      <p class="text-[10px] text-stone-500 mt-2 text-center">T = thắng · B = bại · H = hoà.<br>Online: chỉ tính trận có người thật, cả hai cùng xác nhận.<br>Offline: kết quả đấu máy (Tic Tac Toe chia theo độ khó), cần đăng nhập. "2 người 1 máy" không được tính.<br>Zombie: điểm cao nhất theo từng chế độ, cần đăng nhập để lưu.</p>
       <button id="stClose" class="mt-2 w-full bg-stone-800 hover:bg-stone-700 text-stone-300 py-1.5 rounded text-xs">Đóng</button>
     </div>
   </div>
@@ -2296,6 +2300,7 @@ function endGame(fromRemote) {
     const mine = mode === 'GUEST' ? p2.hp : p1.hp, theirs = mode === 'GUEST' ? p1.hp : p2.hp;
     reportOnline('fight', mine > theirs ? 'win' : mine < theirs ? 'loss' : 'draw', oppUid, matchId);
   }
+  if (mode === 'AI') reportOffline('fight', p1.hp > p2.hp ? 'win' : p1.hp < p2.hp ? 'loss' : 'draw', 'NORMAL', ticks / 60);
   const n1 = mode === 'GUEST' ? oppName : playerName;
   const n2 = mode === 'AI' ? 'Máy' : mode === 'LOCAL2P' ? 'Người chơi 2' : mode === 'GUEST' ? playerName : oppName;
   if (p1.hp > p2.hp) { title = n1.toUpperCase() + ' THẮNG!'; desc = 'Đối thủ đã gục ngã.'; }
@@ -2534,8 +2539,8 @@ function tRender(){
   $('tStatus').textContent=s;
   $('tRematch').classList.toggle('hidden',!(T.over&&!T.msg&&T.mode!=='GUEST'));
 }
-function tPlay(i,m){T.b[i]=m;T.turn=m==='X'?'O':'X';const r=tWin(T.b);T.res=r;if(r){T.over=true;T.score[r.w]++;if(T.mode==='HOST')tReport(r);}}
-function tNewRound(){clearTimeout(T.aiT);T.b=Array(9).fill('');T.over=false;T.res=null;T.msg='';T.starter=T.starter==='X'?'O':'X';T.turn=T.starter;if(T.mode!=='GUEST')T.mid=newMid(T.code||'local');}
+function tPlay(i,m){T.b[i]=m;T.turn=m==='X'?'O':'X';const r=tWin(T.b);T.res=r;if(r){T.over=true;T.score[r.w]++;if(T.mode==='HOST')tReport(r);else if(T.mode==='AI')tReportOff(r);}}
+function tNewRound(){T.t0=Date.now();clearTimeout(T.aiT);T.b=Array(9).fill('');T.over=false;T.res=null;T.msg='';T.starter=T.starter==='X'?'O':'X';T.turn=T.starter;if(T.mode!=='GUEST')T.mid=newMid(T.code||'local');}
 function tStart(mode){
   T.mode=mode;T.started=true;T.score={X:0,O:0,D:0};T.starter='O';T.me=mode==='GUEST'?'O':'X';tNewRound();
   show('menu',false);show('wait',false);show('ttt',true);tRender();
@@ -2573,6 +2578,7 @@ function tAI(){
 }
 
 // Online (Supabase Realtime, host là trọng tài). Chỉ trận online mới báo thành tích.
+function tReportOff(r){reportOffline('ttt',r.w==='D'?'draw':r.w===T.me?'win':'loss',T.diff||'NORMAL',(Date.now()-(T.t0||Date.now()))/1000);}
 function tReport(r){reportOnline('ttt',r.w==='D'?'draw':r.w===T.me?'win':'loss',T.oppUid,T.mid);}
 function tSend(){if(T.ch)T.ch.send({type:'broadcast',event:'board',payload:{b:T.b,turn:T.turn,over:T.over,score:T.score,mid:T.mid}});}
 function tBroadcast(){tSend();if(T.over)[200,500].forEach(d=>setTimeout(()=>{if(T.ch&&T.over)tSend();},d));}
@@ -2675,7 +2681,7 @@ $('tMenu').onclick=tToMenu;
 window.addEventListener('resize',()=>{if(T.mode)tRender();});
 
 // ================= ACCOUNT & STATS =================
-let user=null, authTab='login', statGame='fight';
+let user=null, authTab='login', statGame='fight', statMode='online', oDiff='NORMAL';
 const uName=u=>cleanName((u&&(u.user_metadata&&u.user_metadata.username||(u.email||'').split('@')[0])),'Player');
 function applyUser(u){
   user=u;
@@ -2751,11 +2757,16 @@ function reportOnline(game,res,opp,mid){
   });
 }
 async function loadStats(){
+  const zom=statGame==='zombie', off=!zom&&statMode==='offline';
   tabStyle([['stF','fight'],['stT','ttt'],['stZ','zombie']],statGame);
-  show('stDiff',statGame==='zombie');
-  tabStyle(ZDIFFS.map(d=>['sd_'+d,d]),zDiff);
+  show('stMode',!zom);                                   // Zombie vốn là chơi đơn nên không chia Online/Offline
+  tabStyle([['smOn','online'],['smOff','offline']],statMode);
+  show('stDiff',zom||(off&&statGame==='ttt'));           // Offline Tic Tac Toe chia theo độ khó
+  show('sd_INSANE',zom);
+  tabStyle(ZDIFFS.map(d=>['sd_'+d,d]),zom?zDiff:oDiff);
   const list=$('stList'),mine=$('stMine');list.textContent='Đang tải...';mine.textContent='';
-  if(statGame==='zombie')return loadZombieStats(list,mine);
+  if(zom)return loadZombieStats(list,mine);
+  if(off)return loadOfflineStats(list,mine);
   const q=sb.from('player_stats').select('user_id,username,wins,losses,draws').eq('game',statGame).order('wins',{ascending:false}).limit(10);
   const {data,error}=await q;
   if(error){list.textContent='Chưa tải được bảng xếp hạng (đã chạy supabase_setup_secure.sql chưa?)';return;}
@@ -2772,6 +2783,40 @@ async function loadStats(){
   if(!user){mine.textContent='Đăng nhập để lưu thành tích của bạn';return;}
   const {data:me}=await sb.from('player_stats').select('wins,losses,draws').eq('game',statGame).eq('user_id',user.id).maybeSingle();
   mine.textContent=me?'Của bạn: '+me.wins+' thắng · '+me.losses+' thua · '+me.draws+' hoà':'Bạn chưa có ván nào được lưu';
+}
+// ---- Bảng xếp hạng OFFLINE (đấu máy) ----
+async function loadOfflineStats(list,mine){
+  const diff=statGame==='ttt'?oDiff:'NORMAL';
+  const {data,error}=await sb.from('offline_stats').select('user_id,username,wins,losses,draws').eq('game',statGame).eq('difficulty',diff).order('wins',{ascending:false}).limit(10);
+  if(error){list.textContent='Chưa tải được bảng Offline (đã chạy supabase_offline.sql chưa?)';return;}
+  list.textContent='';
+  if(!data.length)list.textContent='Chưa có dữ liệu.';
+  data.forEach((r,i)=>{
+    const row=document.createElement('div');
+    row.className='grid grid-cols-[1.5rem_1fr_auto] gap-2 px-2 py-1 rounded '+(user&&r.user_id===user.id?'bg-amber-600/25':'bg-stone-800/60');
+    [String(i+1),r.username,r.wins+'T · '+r.losses+'B · '+r.draws+'H'].forEach((t,k)=>{
+      const sp=document.createElement('span');sp.textContent=t;
+      sp.className=k===1?'truncate text-amber-200':k===2?'text-stone-400':'text-stone-500';row.appendChild(sp);});
+    list.appendChild(row);
+  });
+  if(!user){mine.textContent='Đăng nhập để lưu thành tích đấu máy của bạn';return;}
+  const {data:me}=await sb.from('offline_stats').select('wins,losses,draws').eq('game',statGame).eq('difficulty',diff).eq('user_id',user.id).maybeSingle();
+  mine.textContent=me?'Của bạn: '+me.wins+' thắng · '+me.losses+' thua · '+me.draws+' hoà':'Bạn chưa có ván nào ở mục này';
+}
+let offWarned=false;
+// Báo kết quả đấu máy. Server tự giới hạn tần suất / độ dài ván tối thiểu.
+function reportOffline(game,res,diff,secs){
+  if(!user){if(!offWarned){offWarned=true;toast('Đăng nhập để lưu thành tích đấu máy vào bảng Offline');}return;}
+  sb.rpc('report_offline',{p_game:game,p_diff:diff,p_result:res,p_secs:Math.max(0,Math.floor(Number(secs)||0))}).then(({data,error})=>{
+    if(error)return toast('Không lưu được thành tích Offline');
+    const msg={
+      ok:res==='win'?'🏆 Offline: Thắng':res==='loss'?'Offline: Thua':'Offline: Hoà',
+      rate_limited:'Thao tác quá nhanh, ván này không được tính',
+      hourly_limit:'Đã đạt giới hạn số ván Offline trong 1 giờ',
+      too_short:'Ván quá ngắn, không được tính'
+    }[data];
+    if(msg)toast(msg);
+  });
 }
 const ZDIFFS=['EASY','NORMAL','HARD','INSANE'];
 let zDiff='NORMAL';
@@ -2795,7 +2840,8 @@ async function loadZombieStats(list,mine){
 }
 $('btnStats').onclick=()=>{show('statsModal',true);loadStats();};
 $('stF').onclick=()=>{statGame='fight';loadStats();};$('stT').onclick=()=>{statGame='ttt';loadStats();};$('stZ').onclick=()=>{statGame='zombie';loadStats();};
-ZDIFFS.forEach(d=>{$('sd_'+d).onclick=()=>{zDiff=d;loadStats();};});
+ZDIFFS.forEach(d=>{$('sd_'+d).onclick=()=>{if(statGame==='zombie')zDiff=d;else oDiff=d;loadStats();};});
+$('smOn').onclick=()=>{statMode='online';loadStats();};$('smOff').onclick=()=>{statMode='offline';loadStats();};
 $('zTop').onclick=()=>{statGame='zombie';show('statsModal',true);loadStats();};
 
 // Gửi điểm Zombie lên server (server tự kiểm tra tính hợp lý + giới hạn tần suất)
