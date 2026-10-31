@@ -91,30 +91,30 @@
         <button id="btnAI" class="flex-1 py-2.5 bg-stone-800 hover:bg-stone-700 border border-stone-500 rounded-lg font-bold text-amber-200 text-xs">🤖 Đấu máy</button>
         <button id="btn2P" class="flex-1 py-2.5 bg-stone-800 hover:bg-stone-700 border border-stone-500 rounded-lg font-bold text-amber-200 text-xs">👥 2 người 1 máy</button>
       </div>
-      <div class="text-center text-[10px] text-amber-500 uppercase tracking-widest">Online PvP</div>
+      <div class="text-center text-[10px] text-amber-500 uppercase tracking-widest">Online PvP (tính thành tích)</div>
       <div class="flex gap-2">
         <button id="btnCreate" class="flex-1 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 text-stone-950 font-black rounded-lg text-xs">➕ Tạo phòng</button>
         <div class="flex-1 flex gap-1">
-          <input id="inRoom" maxlength="4" inputmode="numeric" placeholder="Mã" class="w-14 bg-stone-950 border border-amber-800 rounded text-center text-amber-300 font-mono font-bold text-sm outline-none">
+          <input id="inRoom" maxlength="6" inputmode="numeric" placeholder="Mã" class="w-20 bg-stone-950 border border-amber-800 rounded text-center text-amber-300 font-mono font-bold text-sm outline-none">
           <button id="btnJoin" class="flex-1 py-2.5 bg-stone-800 border border-amber-500/50 text-amber-400 font-bold rounded-lg text-xs">Vào phòng</button>
         </div>
       </div>
-      <p class="text-[10px] text-stone-400 text-center leading-relaxed">Phím: <b>A/D</b> di chuyển · <b>W</b> nhảy · <b>S</b> cúi (né đòn cao) · <b>J</b> đấm · <b>K</b> đá · <b>U</b> kiếm.<br>P2 (2 người 1 máy): mũi tên + 1/2/3</p>
+      <p class="text-[10px] text-stone-400 text-center leading-relaxed">Phím: <b>A/D</b> di chuyển · <b>W</b> nhảy · <b>S</b> cúi (né đòn cao) · <b>J</b> đấm · <b>K</b> đá · <b>U</b> kiếm.<br>P2 (2 người 1 máy): mũi tên + 1/2/3<br>Thành tích chỉ tính khi cả hai đều đăng nhập và đấu online.</p>
       </div>
       <div id="tttPanel" class="space-y-2 hidden">
         <div class="flex gap-2">
           <button id="tPlayAI" class="flex-1 py-2.5 bg-stone-800 hover:bg-stone-700 border border-stone-500 rounded-lg font-bold text-amber-200 text-xs">🤖 Đấu máy</button>
           <button id="tPlayLocal" class="flex-1 py-2.5 bg-stone-800 hover:bg-stone-700 border border-stone-500 rounded-lg font-bold text-amber-200 text-xs">👥 2 người 1 máy</button>
         </div>
-        <div class="text-center text-[10px] text-amber-500 uppercase tracking-widest">Online PvP</div>
+        <div class="text-center text-[10px] text-amber-500 uppercase tracking-widest">Online PvP (tính thành tích)</div>
         <div class="flex gap-2">
           <button id="tCreateBtn" class="flex-1 py-2.5 bg-gradient-to-r from-amber-600 to-amber-700 text-stone-950 font-black rounded-lg text-xs">➕ Tạo phòng</button>
           <div class="flex-1 flex gap-1">
-            <input id="tInRoom" maxlength="4" inputmode="numeric" placeholder="Mã" class="w-14 bg-stone-950 border border-amber-800 rounded text-center text-amber-300 font-mono font-bold text-sm outline-none">
+            <input id="tInRoom" maxlength="6" inputmode="numeric" placeholder="Mã" class="w-20 bg-stone-950 border border-amber-800 rounded text-center text-amber-300 font-mono font-bold text-sm outline-none">
             <button id="tJoinBtn" class="flex-1 py-2.5 bg-stone-800 border border-amber-500/50 text-amber-400 font-bold rounded-lg text-xs">Vào phòng</button>
           </div>
         </div>
-        <p class="text-[10px] text-stone-400 text-center">Chủ phòng cầm ✖. Người đi trước đổi luân phiên mỗi ván.<br>Máy thỉnh thoảng đi sai nên vẫn thắng được.</p>
+        <p class="text-[10px] text-stone-400 text-center">Chủ phòng cầm ✖. Người đi trước đổi luân phiên mỗi ván.<br>Máy thỉnh thoảng đi sai nên vẫn thắng được. Đấu máy không tính thành tích.</p>
       </div>
       <div id="zPanel" class="space-y-2 hidden">
         <p class="text-xs text-stone-300 text-center leading-relaxed">🧟 Sinh tồn trước biển zombie: nhặt XP, lên cấp, nâng cấp vũ khí, chọn nhân vật và trang phục. Chơi đơn.</p>
@@ -127,7 +127,7 @@
   <!-- WAITING -->
   <div id="wait" class="absolute inset-0 bg-black/85 flex flex-col items-center justify-center z-30 hidden">
     <p id="waitMsg" class="text-sm text-stone-300 mb-1">Đang chờ đối thủ...</p>
-    <div id="waitCode" class="text-6xl font-black text-amber-400 tracking-[.3em] mb-2">0000</div>
+    <div id="waitCode" class="text-5xl font-black text-amber-400 tracking-[.3em] mb-2">000000</div>
     <p class="text-xs text-stone-400 mb-4">Gửi mã này cho bạn bè để vào phòng</p>
     <button id="btnCancel" class="px-5 py-2 bg-stone-700 hover:bg-stone-600 rounded-lg text-sm font-bold">Huỷ</button>
   </div>
@@ -177,7 +177,7 @@
       </div>
       <div id="stMine" class="text-xs text-amber-300 mb-2 text-center"></div>
       <div id="stList" class="text-xs space-y-1"></div>
-      <p class="text-[10px] text-stone-500 mt-2 text-center">T = thắng · B = bại · H = hoà (tính khi đấu máy hoặc online)</p>
+      <p class="text-[10px] text-stone-500 mt-2 text-center">T = thắng · B = bại · H = hoà<br>Chỉ tính trận online giữa 2 tài khoản đã đăng nhập, cả hai cùng xác nhận.</p>
       <button id="stClose" class="mt-2 w-full bg-stone-800 hover:bg-stone-700 text-stone-300 py-1.5 rounded text-xs">Đóng</button>
     </div>
   </div>
@@ -200,12 +200,27 @@ const $ = id => document.getElementById(id);
 const cv = $('cv'), ctx = cv.getContext('2d');
 const W = 1000, H = 562, GROUND = 460, DT = 1000 / 60;
 
+// ================= SECURITY HELPERS =================
+// Mọi dữ liệu nhận từ mạng đều coi là không tin cậy: ép kiểu + whitelist.
+const rnd = n => { const a = new Uint32Array(1); crypto.getRandomValues(a); return a[0] % n; };
+const rid = () => Array.from({ length: 8 }, () => rnd(36).toString(36)).join('');
+const newCode = () => String(100000 + rnd(900000));                 // mã phòng 6 số
+const newMid = code => code + '-' + Date.now().toString(36) + rid().slice(0, 4); // mã trận duy nhất
+const B = v => (v ? 1 : 0);
+const ATKS = ['punch', 'kick', 'weapon'];
+const STATES = ['idle', 'crouch', 'punch', 'kick', 'weapon', 'hit'];
+const cleanName = (s, d) => ((typeof s === 'string' ? s.replace(/[\u0000-\u001f<>]/g, '').trim().slice(0, 12) : '') || d);
+const cleanId = s => (typeof s === 'string' && /^[\w-]{1,40}$/.test(s) ? s : null);
+const num = (v, d, lo, hi) => (Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : d);
+const CODE_RE = /^\d{6}$/;
+
 // ================= STATE =================
 let mode = 'MENU';           // MENU | AI | LOCAL2P | HOST | GUEST
 let running = false, over = false;
-let timer = 99, ticks = 0;
-let channel = null, roomCode = null, myId = Math.random().toString(36).slice(2, 9);
+let timer = 99, ticks = 0, inTick = 0;
+let channel = null, roomCode = null, myId = rid();
 let guestId = null, guestJoined = false, joinTimer = null;
+let oppUid = null, matchId = null;   // dùng để báo kết quả 2 chiều lên server
 let playerName = 'Player', oppName = 'Đối thủ';
 let remote = { l:0, r:0, u:0, d:0, atk:null };
 let lastSent = '';
@@ -360,7 +375,7 @@ function toast(msg) {
 function show(id, v) { $(id).classList.toggle('hidden', !v); }
 
 function startGame() {
-  p1.reset(); p2.reset(); timer = 99; ticks = 0; over = false; running = true;
+  p1.reset(); p2.reset(); timer = 99; ticks = 0; inTick = 0; over = false; running = true;
   remote = { l:0, r:0, u:0, d:0, atk:null }; atkQ.p1 = atkQ.p2 = null;
   const mine = playerName.toUpperCase(), opp = oppName.toUpperCase();
   $('n1').textContent = (mode === 'GUEST' ? opp : mine) + ' (P1)';
@@ -376,9 +391,10 @@ function endGame(fromRemote) {
   if (over) return;
   over = true; running = false;
   let title = 'HOÀ NHAU!', desc = 'Hai cao thủ đồng sức đồng tài.';
-  if (mode === 'AI' || mode === 'HOST' || mode === 'GUEST') {
+  // Chỉ báo thành tích với trận ONLINE (đấu máy / 2 người 1 máy không tính)
+  if (mode === 'HOST' || mode === 'GUEST') {
     const mine = mode === 'GUEST' ? p2.hp : p1.hp, theirs = mode === 'GUEST' ? p1.hp : p2.hp;
-    recordResult('fight', mine > theirs ? 'win' : mine < theirs ? 'loss' : 'draw');
+    reportOnline('fight', mine > theirs ? 'win' : mine < theirs ? 'loss' : 'draw', oppUid, matchId);
   }
   const n1 = mode === 'GUEST' ? oppName : playerName;
   const n2 = mode === 'AI' ? 'Máy' : mode === 'LOCAL2P' ? 'Người chơi 2' : mode === 'GUEST' ? playerName : oppName;
@@ -393,6 +409,7 @@ function cleanup() {
   running = false; over = false; clearInterval(joinTimer); joinTimer = null;
   if (channel) { try { channel.send({ type:'broadcast', event:'leave', payload:{ id:myId } }); } catch (e) {} sb.removeChannel(channel); channel = null; }
   roomCode = null; guestId = null; guestJoined = false; mode = 'MENU'; lastSent = '';
+  oppUid = null; matchId = null;
 }
 function toMenu() {
   cleanup();
@@ -407,7 +424,7 @@ function aiInput() {
   if (p2.attacking || p2.state === 'hit') return inp;
   if (dist > 95) { if (dx < 0) inp.l = 1; else inp.r = 1; }
   else if (dist < 55 && Math.random() < 0.05) { if (dx < 0) inp.r = 1; else inp.l = 1; }
-  else if (Math.random() < 0.05) inp.atk = ['punch','kick','weapon'][Math.random() * 3 | 0];
+  else if (Math.random() < 0.05) inp.atk = ATKS[Math.random() * 3 | 0];
   if (Math.random() < 0.004) inp.u = 1;
   if (p1.attacking && dist < 110 && Math.random() < 0.08) inp.d = 1;
   return inp;
@@ -439,18 +456,23 @@ function broadcastState() {
   channel.send({ type:'broadcast', event:'state', payload:{ a:f(p1), b:f(p2), t:timer, o:over ? 1 : 0 } });
 }
 function applyState(s) {
+  if (!s || !Array.isArray(s.a) || !Array.isArray(s.b)) return;
   [[p1, s.a], [p2, s.b]].forEach(([p, a]) => {
-    p.tx = a[0]; p.ty = a[1]; p.hp = a[2]; p.state = a[3]; p.facing = a[4]; p.flash = a[5]; p.grounded = !!a[6];
+    p.tx = num(a[0], p.tx, 0, W); p.ty = num(a[1], p.ty, -300, GROUND);
+    p.hp = num(a[2], p.hp, 0, 100);
+    p.state = STATES.includes(a[3]) ? a[3] : 'idle';
+    p.facing = a[4] === -1 ? -1 : 1;
+    p.flash = num(a[5], 0, 0, 20); p.grounded = !!a[6];
   });
-  timer = s.t;
+  timer = num(s.t, timer, 0, 99);
   if (s.o) { p1.x = p1.tx; p2.x = p2.tx; endGame(true); }
 }
 function sendGuestInput() {
   if (!channel) return;
   const inp = p1Input();
-  const msg = { l:+!!inp.l, r:+!!inp.r, u:+!!inp.u, d:+!!inp.d, atk:inp.atk };
+  const msg = { l:B(inp.l), r:B(inp.r), u:B(inp.u), d:B(inp.d), atk:inp.atk };
   const sig = JSON.stringify([msg.l, msg.r, msg.u, msg.d]);
-  if (inp.atk || sig !== lastSent || ticks++ % 6 === 0) {
+  if (inp.atk || sig !== lastSent || ++inTick % 6 === 0) {
     lastSent = sig;
     channel.send({ type:'broadcast', event:'input', payload:{ id:myId, ...msg } });
   }
@@ -462,33 +484,37 @@ function openChannel(code) {
   channel = sb.channel('sf_room_' + code, { config:{ broadcast:{ self:false, ack:false } } });
 
   channel.on('broadcast', { event:'join' }, ({ payload }) => {
-    if (mode !== 'HOST') return;
-    if (!guestId || guestId === payload.id) {
-      guestId = payload.id; oppName = payload.name || 'Đối thủ';
-      channel.send({ type:'broadcast', event:'start', payload:{ to:guestId, name:playerName } });
-      if (!guestJoined) { guestJoined = true; startGame(); }
+    if (mode !== 'HOST' || !payload) return;
+    const pid = cleanId(payload.id); if (!pid) return;
+    if (!guestId || guestId === pid) {
+      guestId = pid; oppName = cleanName(payload.name, 'Đối thủ'); oppUid = cleanId(payload.uid);
+      const first = !guestJoined;
+      if (first) { guestJoined = true; matchId = newMid(roomCode); }
+      channel.send({ type:'broadcast', event:'start', payload:{ to:guestId, name:playerName, uid:user ? user.id : null, mid:matchId } });
+      if (first) startGame();
     } else {
-      channel.send({ type:'broadcast', event:'full', payload:{ to:payload.id } });
+      channel.send({ type:'broadcast', event:'full', payload:{ to:pid } });
     }
   });
   channel.on('broadcast', { event:'start' }, ({ payload }) => {
-    if (mode !== 'GUEST' || payload.to !== myId) return;
+    if (mode !== 'GUEST' || !payload || payload.to !== myId) return;
     clearInterval(joinTimer); joinTimer = null;
-    oppName = payload.name || 'Chủ phòng';
+    oppName = cleanName(payload.name, 'Chủ phòng'); oppUid = cleanId(payload.uid);
+    const mid = cleanId(payload.mid); if (mid) matchId = mid;
     if (!running || over) startGame();
   });
   channel.on('broadcast', { event:'full' }, ({ payload }) => {
-    if (mode === 'GUEST' && payload.to === myId) { toast('Phòng đã đủ người!'); toMenu(); }
+    if (mode === 'GUEST' && payload && payload.to === myId) { toast('Phòng đã đủ người!'); toMenu(); }
   });
   channel.on('broadcast', { event:'input' }, ({ payload }) => {
-    if (mode !== 'HOST' || payload.id !== guestId) return;
-    remote.l = payload.l; remote.r = payload.r; remote.u = payload.u; remote.d = payload.d;
-    if (payload.atk) remote.atk = payload.atk;
+    if (mode !== 'HOST' || !payload || payload.id !== guestId) return;
+    remote.l = B(payload.l); remote.r = B(payload.r); remote.u = B(payload.u); remote.d = B(payload.d);
+    if (ATKS.includes(payload.atk)) remote.atk = payload.atk;
   });
   channel.on('broadcast', { event:'state' }, ({ payload }) => { if (mode === 'GUEST' && running) applyState(payload); });
   channel.on('broadcast', { event:'leave' }, ({ payload }) => {
-    if (payload.id === myId) return;
-    if (mode === 'HOST' && guestJoined) {
+    if (!payload || payload.id === myId) return;
+    if (mode === 'HOST' && guestJoined && payload.id === guestId) {
       guestJoined = false; guestId = null; running = false; over = true;
       $('resTitle').textContent = 'ĐỐI THỦ ĐÃ THOÁT'; $('resDesc').textContent = 'Bạn có thể quay lại menu và tạo phòng mới.';
       $('btnRematch').classList.add('hidden'); show('result', true);
@@ -502,8 +528,8 @@ function openChannel(code) {
 }
 
 function createRoom() {
-  const code = String(1000 + Math.random() * 9000 | 0);
-  mode = 'HOST'; guestId = null; guestJoined = false;
+  const code = newCode();
+  mode = 'HOST'; guestId = null; guestJoined = false; oppUid = null; matchId = null;
   openChannel(code).subscribe(status => {
     if (status === 'SUBSCRIBED') {
       $('waitCode').textContent = code; $('waitMsg').textContent = 'Đang chờ đối thủ...';
@@ -512,7 +538,7 @@ function createRoom() {
   });
 }
 function joinRoom(code) {
-  mode = 'GUEST';
+  mode = 'GUEST'; oppUid = null; matchId = null;
   openChannel(code).subscribe(status => {
     if (status === 'SUBSCRIBED') {
       $('waitCode').textContent = code; $('waitMsg').textContent = 'Đang vào phòng...';
@@ -520,7 +546,7 @@ function joinRoom(code) {
       let tries = 0;
       const send = () => {
         if (++tries > 6) { toast('Không tìm thấy phòng ' + code); toMenu(); return; }
-        channel.send({ type:'broadcast', event:'join', payload:{ id:myId, name:playerName } });
+        channel.send({ type:'broadcast', event:'join', payload:{ id:myId, name:playerName, uid:user ? user.id : null } });
       };
       send(); joinTimer = setInterval(send, 1000);
     } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') { toast('Không kết nối được Supabase'); toMenu(); }
@@ -558,7 +584,7 @@ function frame(now) {
 const saved = localStorage.getItem('shadow_nickname');
 if (saved) $('inName').value = saved;
 $('btnEnter').onclick = () => {
-  const n = $('inName').value.trim();
+  const n = cleanName($('inName').value, '');
   if (!n) return toast('Vui lòng nhập tên!');
   playerName = n; localStorage.setItem('shadow_nickname', n);
   $('dispName').textContent = n; show('nameBox', false); show('modeBox', true);
@@ -570,7 +596,7 @@ $('btn2P').onclick = () => { mode = 'LOCAL2P'; roomCode = null; oppName = 'Ngư�
 $('btnCreate').onclick = createRoom;
 $('btnJoin').onclick = () => {
   const c = $('inRoom').value.trim();
-  if (!/^\d{4}$/.test(c)) return toast('Nhập mã phòng 4 số!');
+  if (!CODE_RE.test(c)) return toast('Nhập mã phòng 6 số!');
   joinRoom(c);
 };
 $('btnCancel').onclick = () => T.mode ? tToMenu() : toMenu();
@@ -578,13 +604,14 @@ $('btnMenu').onclick = toMenu;
 $('btnRematch').onclick = () => {
   if (mode === 'HOST') {
     if (!guestJoined) return;
-    startGame(); channel.send({ type:'broadcast', event:'start', payload:{ to:guestId, name:playerName } });
+    matchId = newMid(roomCode);                       // mỗi ván một mã trận mới
+    startGame(); channel.send({ type:'broadcast', event:'start', payload:{ to:guestId, name:playerName, uid:user ? user.id : null, mid:matchId } });
   } else startGame();
 };
 
 // ================= TIC TAC TOE =================
 const LINES=[[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
-const T={mode:null,b:Array(9).fill(''),turn:'X',me:'X',over:false,res:null,starter:'O',score:{X:0,O:0,D:0},names:{X:'',O:''},ch:null,code:null,guestId:null,joined:false,started:false,joinTimer:null,aiT:null,msg:''};
+const T={mode:null,b:Array(9).fill(''),turn:'X',me:'X',over:false,res:null,starter:'O',score:{X:0,O:0,D:0},names:{X:'',O:''},ch:null,code:null,guestId:null,joined:false,started:false,joinTimer:null,aiT:null,msg:'',oppUid:null,mid:null};
 const tBoard=$('tBoard');
 for(let i=0;i<9;i++){const c=document.createElement('button');c.className='w-full h-full min-w-0 min-h-0 p-0 overflow-hidden leading-none rounded-lg bg-stone-900 border-2 border-amber-700/60 font-black flex items-center justify-center';c.onclick=()=>tClick(i);tBoard.appendChild(c);}
 
@@ -607,8 +634,8 @@ function tRender(){
   $('tStatus').textContent=s;
   $('tRematch').classList.toggle('hidden',!(T.over&&!T.msg&&T.mode!=='GUEST'));
 }
-function tPlay(i,m){T.b[i]=m;T.turn=m==='X'?'O':'X';const r=tWin(T.b);T.res=r;if(r){T.over=true;T.score[r.w]++;if(T.mode==='AI'||T.mode==='HOST')tReport(r);}}
-function tNewRound(){clearTimeout(T.aiT);T.b=Array(9).fill('');T.over=false;T.res=null;T.msg='';T.starter=T.starter==='X'?'O':'X';T.turn=T.starter;}
+function tPlay(i,m){T.b[i]=m;T.turn=m==='X'?'O':'X';const r=tWin(T.b);T.res=r;if(r){T.over=true;T.score[r.w]++;if(T.mode==='HOST')tReport(r);}}
+function tNewRound(){clearTimeout(T.aiT);T.b=Array(9).fill('');T.over=false;T.res=null;T.msg='';T.starter=T.starter==='X'?'O':'X';T.turn=T.starter;if(T.mode!=='GUEST')T.mid=newMid(T.code||'local');}
 function tStart(mode){
   T.mode=mode;T.started=true;T.score={X:0,O:0,D:0};T.starter='O';T.me=mode==='GUEST'?'O':'X';tNewRound();
   show('menu',false);show('wait',false);show('ttt',true);tRender();
@@ -638,58 +665,69 @@ function tAI(){
   tPlay(mv,ai);tRender();
 }
 
-// Online (Supabase Realtime, host là trọng tài)
-function tReport(r){recordResult('ttt',r.w==='D'?'draw':r.w===T.me?'win':'loss');}
-function tSend(){if(T.ch)T.ch.send({type:'broadcast',event:'board',payload:{b:T.b,turn:T.turn,over:T.over,score:T.score}});}
+// Online (Supabase Realtime, host là trọng tài). Chỉ trận online mới báo thành tích.
+function tReport(r){reportOnline('ttt',r.w==='D'?'draw':r.w===T.me?'win':'loss',T.oppUid,T.mid);}
+function tSend(){if(T.ch)T.ch.send({type:'broadcast',event:'board',payload:{b:T.b,turn:T.turn,over:T.over,score:T.score,mid:T.mid}});}
 function tBroadcast(){tSend();if(T.over)[200,500].forEach(d=>setTimeout(()=>{if(T.ch&&T.over)tSend();},d));}
 function tOpen(code){
   T.code=code;
   T.ch=sb.channel('ttt_room_'+code,{config:{broadcast:{self:false,ack:false}}});
   T.ch.on('broadcast',{event:'join'},({payload})=>{
-    if(T.mode!=='HOST')return;
-    if(!T.guestId||T.guestId===payload.id){
-      T.guestId=payload.id;T.names.O=payload.name||'Đối thủ';
+    if(T.mode!=='HOST'||!payload)return;
+    const pid=cleanId(payload.id);if(!pid)return;
+    if(!T.guestId||T.guestId===pid){
+      T.guestId=pid;T.names.O=cleanName(payload.name,'Đối thủ');T.oppUid=cleanId(payload.uid);
       if(!T.joined){T.joined=true;tStart('HOST');}
-      T.ch.send({type:'broadcast',event:'start',payload:{to:T.guestId,name:T.names.X}});tBroadcast();
-    } else T.ch.send({type:'broadcast',event:'full',payload:{to:payload.id}});
+      T.ch.send({type:'broadcast',event:'start',payload:{to:T.guestId,name:T.names.X,uid:user?user.id:null}});tBroadcast();
+    } else T.ch.send({type:'broadcast',event:'full',payload:{to:pid}});
   });
   T.ch.on('broadcast',{event:'start'},({payload})=>{
-    if(T.mode!=='GUEST'||payload.to!==myId||T.started)return;
-    clearInterval(T.joinTimer);T.names={X:payload.name||'Chủ phòng',O:playerName};tStart('GUEST');
+    if(T.mode!=='GUEST'||!payload||payload.to!==myId||T.started)return;
+    clearInterval(T.joinTimer);T.oppUid=cleanId(payload.uid);T.names={X:cleanName(payload.name,'Chủ phòng'),O:playerName};tStart('GUEST');
   });
-  T.ch.on('broadcast',{event:'full'},({payload})=>{if(T.mode==='GUEST'&&payload.to===myId){toast('Phòng đã đủ người!');tToMenu();}});
+  T.ch.on('broadcast',{event:'full'},({payload})=>{if(T.mode==='GUEST'&&payload&&payload.to===myId){toast('Phòng đã đủ người!');tToMenu();}});
   T.ch.on('broadcast',{event:'move'},({payload})=>{
-    if(T.mode!=='HOST'||payload.id!==T.guestId||T.over||T.turn!=='O'||T.b[payload.i])return;
-    tPlay(payload.i,'O');tBroadcast();tRender();
+    if(T.mode!=='HOST'||!payload||payload.id!==T.guestId||T.over||T.turn!=='O')return;
+    const i=payload.i;
+    if(!Number.isInteger(i)||i<0||i>8||T.b[i])return;
+    tPlay(i,'O');tBroadcast();tRender();
   });
   T.ch.on('broadcast',{event:'board'},({payload})=>{
-    if(T.mode!=='GUEST'||!T.started)return;
-    const was=T.over;T.b=payload.b;T.turn=payload.turn;T.over=payload.over;T.score=payload.score;T.res=tWin(T.b);T.msg='';if(T.over&&!was&&T.res)tReport(T.res);tRender();
+    if(T.mode!=='GUEST'||!T.started||!payload)return;
+    if(!Array.isArray(payload.b)||payload.b.length!==9||!payload.b.every(v=>v===''||v==='X'||v==='O'))return;
+    const sc=payload.score;
+    if(!sc||![sc.X,sc.O,sc.D].every(Number.isFinite))return;
+    const was=T.over;
+    T.b=payload.b;T.turn=payload.turn==='O'?'O':'X';T.over=!!payload.over;
+    T.score={X:sc.X,O:sc.O,D:sc.D};T.res=tWin(T.b);T.msg='';
+    const mid=cleanId(payload.mid);if(mid)T.mid=mid;
+    if(T.over&&!was&&T.res)tReport(T.res);
+    tRender();
   });
   T.ch.on('broadcast',{event:'leave'},({payload})=>{
-    if(payload.id===myId)return;
-    if(T.mode==='HOST'&&T.joined){T.joined=false;T.guestId=null;T.over=true;T.msg='Đối thủ đã thoát';tRender();}
+    if(!payload||payload.id===myId)return;
+    if(T.mode==='HOST'&&T.joined&&payload.id===T.guestId){T.joined=false;T.guestId=null;T.over=true;T.msg='Đối thủ đã thoát';tRender();}
     else if(T.mode==='GUEST'&&T.started){T.over=true;T.msg='Chủ phòng đã thoát';tRender();}
   });
   return T.ch;
 }
 function tCreate(){
-  const code=String(1000+Math.random()*9000|0);
-  T.mode='HOST';T.guestId=null;T.joined=false;T.started=false;T.names={X:playerName,O:'Đối thủ'};
+  const code=newCode();
+  T.mode='HOST';T.guestId=null;T.joined=false;T.started=false;T.oppUid=null;T.names={X:playerName,O:'Đối thủ'};
   tOpen(code).subscribe(st=>{
     if(st==='SUBSCRIBED'){$('waitCode').textContent=code;$('waitMsg').textContent='Đang chờ đối thủ (Tic Tac Toe)...';show('menu',false);show('wait',true);}
     else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'){toast('Không kết nối được Supabase');tToMenu();}
   });
 }
 function tJoin(code){
-  T.mode='GUEST';T.started=false;
+  T.mode='GUEST';T.started=false;T.oppUid=null;
   tOpen(code).subscribe(st=>{
     if(st==='SUBSCRIBED'){
       $('waitCode').textContent=code;$('waitMsg').textContent='Đang vào phòng...';show('menu',false);show('wait',true);
       let tries=0;
       const send=()=>{
         if(++tries>6){toast('Không tìm thấy phòng '+code);tToMenu();return;}
-        T.ch.send({type:'broadcast',event:'join',payload:{id:myId,name:playerName}});
+        T.ch.send({type:'broadcast',event:'join',payload:{id:myId,name:playerName,uid:user?user.id:null}});
       };
       send();T.joinTimer=setInterval(send,1000);
     } else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'){toast('Không kết nối được Supabase');tToMenu();}
@@ -698,7 +736,7 @@ function tJoin(code){
 function tToMenu(){
   clearTimeout(T.aiT);clearInterval(T.joinTimer);
   if(T.ch){try{T.ch.send({type:'broadcast',event:'leave',payload:{id:myId}});}catch(e){}sb.removeChannel(T.ch);T.ch=null;}
-  Object.assign(T,{mode:null,code:null,guestId:null,joined:false,started:false,msg:''});
+  Object.assign(T,{mode:null,code:null,guestId:null,joined:false,started:false,msg:'',oppUid:null,mid:null});
   show('ttt',false);show('wait',false);show('menu',true);show('nameBox',false);show('modeBox',true);setTab('t');
 }
 
@@ -715,7 +753,7 @@ $('tPlayLocal').onclick=()=>{T.names={X:playerName,O:'Người chơi 2'};T.code=
 $('tCreateBtn').onclick=tCreate;
 $('tJoinBtn').onclick=()=>{
   const c=$('tInRoom').value.trim();
-  if(!/^\d{4}$/.test(c))return toast('Nhập mã phòng 4 số!');
+  if(!CODE_RE.test(c))return toast('Nhập mã phòng 6 số!');
   T.names={X:'Chủ phòng',O:playerName};tJoin(c);
 };
 $('tRematch').onclick=()=>{
@@ -729,7 +767,7 @@ window.addEventListener('resize',()=>{if(T.mode)tRender();});
 
 // ================= ACCOUNT & STATS =================
 let user=null, authTab='login', statGame='fight';
-const uName=u=>(u&&(u.user_metadata&&u.user_metadata.username||(u.email||'').split('@')[0]))||'Player';
+const uName=u=>cleanName((u&&(u.user_metadata&&u.user_metadata.username||(u.email||'').split('@')[0])),'Player');
 function applyUser(u){
   user=u;
   const menuOn=!$('menu').classList.contains('hidden');
@@ -747,7 +785,7 @@ sb.auth.onAuthStateChange((ev,session)=>{
   applyUser(session?session.user:null);
   if(ev==='SIGNED_OUT'&&!$('menu').classList.contains('hidden')){show('modeBox',false);show('nameBox',true);}
 });
-sb.auth.getSession().then(({data})=>applyUser(data.session?data.session.user:null));
+sb.auth.getSession().then(({data})=>applyUser(data.session?data.session.user:null)).catch(()=>applyUser(null));
 
 function tabStyle(ids,active){ids.forEach(([id,k])=>{const e=$(id),on=active===k;
   e.classList.toggle('bg-amber-600',on);e.classList.toggle('text-stone-950',on);
@@ -787,10 +825,20 @@ $('auSubmit').onclick=doAuth;$('auClose').onclick=()=>show('authModal',false);
 $('auUser').addEventListener('keydown',e=>{if(e.key==='Enter')$('auPass').focus();});
 $('auPass').addEventListener('keydown',e=>{if(e.key==='Enter')doAuth();});
 
-function recordResult(game,res){
-  if(!user)return;
-  sb.rpc('record_result',{p_game:game,p_result:res}).then(({error})=>{
-    toast(error?'Không lưu được thành tích':res==='win'?'🏆 Đã lưu thành tích: Thắng':res==='loss'?'Đã lưu thành tích: Thua':'Đã lưu thành tích: Hoà');
+// Báo kết quả trận online. Server chỉ cộng điểm khi CẢ HAI bên (đã đăng nhập)
+// báo cáo khớp nhau cho cùng một mã trận. Client không tự ghi điểm được.
+function reportOnline(game,res,opp,mid){
+  if(!user||!opp||!mid||opp===user.id)return;
+  sb.rpc('report_match',{p_match:mid,p_game:game,p_opponent:opp,p_result:res}).then(({data,error})=>{
+    if(error)return toast('Không lưu được thành tích');
+    const msg={
+      ok:res==='win'?'🏆 Đã lưu thành tích: Thắng':res==='loss'?'Đã lưu thành tích: Thua':'Đã lưu thành tích: Hoà',
+      pending:'Đã gửi kết quả, chờ đối thủ xác nhận',
+      mismatch:'Kết quả hai bên không khớp, không tính',
+      rate_limited:'Thao tác quá nhanh, trận này không được tính',
+      pair_limit:'Đã đạt giới hạn trận với cùng một đối thủ trong 1 giờ'
+    }[data];
+    if(msg)toast(msg);
   });
 }
 async function loadStats(){
@@ -798,7 +846,7 @@ async function loadStats(){
   const list=$('stList'),mine=$('stMine');list.textContent='Đang tải...';mine.textContent='';
   const q=sb.from('player_stats').select('user_id,username,wins,losses,draws').eq('game',statGame).order('wins',{ascending:false}).limit(10);
   const {data,error}=await q;
-  if(error){list.textContent='Chưa tải được bảng xếp hạng (đã chạy supabase_setup.sql chưa?)';return;}
+  if(error){list.textContent='Chưa tải được bảng xếp hạng (đã chạy supabase_setup_secure.sql chưa?)';return;}
   list.textContent='';
   if(!data.length)list.textContent='Chưa có dữ liệu.';
   data.forEach((r,i)=>{
