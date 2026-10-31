@@ -119,6 +119,8 @@
       <div id="zPanel" class="space-y-2 hidden">
         <p class="text-xs text-stone-300 text-center leading-relaxed">🧟 Sinh tồn trước biển zombie: nhặt XP, lên cấp, nâng cấp vũ khí, chọn nhân vật và trang phục. Chơi đơn.</p>
         <button id="zPlay" class="w-full py-3 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-black rounded-lg text-sm">▶ Chơi Zombie Survival</button>
+        <button id="zTop" class="w-full py-2 bg-stone-800 border border-amber-500/50 text-amber-300 font-bold rounded-lg text-xs">🏆 Bảng xếp hạng Zombie</button>
+        <p class="text-[10px] text-stone-400 text-center">Đăng nhập để điểm cao của bạn được lưu vào bảng xếp hạng.</p>
         <p class="text-[10px] text-stone-400 text-center leading-relaxed">WASD / mũi tên di chuyển · Space dùng kỹ năng.<br>Điện thoại: joystick + nút KỸ NĂNG, nên xoay ngang màn hình.</p>
       </div>
     </div>
@@ -172,12 +174,19 @@
   <div id="statsModal" class="absolute inset-0 bg-black/85 flex z-[45] hidden p-3 overflow-y-auto">
     <div class="w-full max-w-sm bg-stone-900 border border-amber-500/40 rounded-xl p-3 m-auto">
       <div class="flex gap-2 mb-2">
-        <button id="stF" class="flex-1 py-1.5 rounded text-xs font-bold border border-amber-500/40">⚔️ Shadow Fight</button>
-        <button id="stT" class="flex-1 py-1.5 rounded text-xs font-bold border border-amber-500/40">❌⭕ Tic Tac Toe</button>
+        <button id="stF" class="flex-1 py-1.5 rounded text-[11px] font-bold border border-amber-500/40">⚔️ Fight</button>
+        <button id="stT" class="flex-1 py-1.5 rounded text-[11px] font-bold border border-amber-500/40">❌⭕ Tic Tac Toe</button>
+        <button id="stZ" class="flex-1 py-1.5 rounded text-[11px] font-bold border border-amber-500/40">🧟 Zombie</button>
+      </div>
+      <div id="stDiff" class="flex gap-1 mb-2 hidden">
+        <button id="sd_EASY" class="flex-1 py-1 rounded text-[10px] font-bold border border-amber-500/40">DỄ</button>
+        <button id="sd_NORMAL" class="flex-1 py-1 rounded text-[10px] font-bold border border-amber-500/40">THƯỜNG</button>
+        <button id="sd_HARD" class="flex-1 py-1 rounded text-[10px] font-bold border border-amber-500/40">KHÓ</button>
+        <button id="sd_INSANE" class="flex-1 py-1 rounded text-[10px] font-bold border border-amber-500/40">SIÊU KHÓ</button>
       </div>
       <div id="stMine" class="text-xs text-amber-300 mb-2 text-center"></div>
       <div id="stList" class="text-xs space-y-1"></div>
-      <p class="text-[10px] text-stone-500 mt-2 text-center">T = thắng · B = bại · H = hoà<br>Chỉ tính trận online giữa 2 tài khoản đã đăng nhập, cả hai cùng xác nhận.</p>
+      <p class="text-[10px] text-stone-500 mt-2 text-center">Fight / Tic Tac Toe: T = thắng · B = bại · H = hoà (chỉ tính trận online, cả hai cùng xác nhận).<br>Zombie: điểm cao nhất theo từng chế độ, cần đăng nhập để lưu.</p>
       <button id="stClose" class="mt-2 w-full bg-stone-800 hover:bg-stone-700 text-stone-300 py-1.5 rounded text-xs">Đóng</button>
     </div>
   </div>
@@ -842,8 +851,11 @@ function reportOnline(game,res,opp,mid){
   });
 }
 async function loadStats(){
-  tabStyle([['stF','fight'],['stT','ttt']],statGame);
+  tabStyle([['stF','fight'],['stT','ttt'],['stZ','zombie']],statGame);
+  show('stDiff',statGame==='zombie');
+  tabStyle(ZDIFFS.map(d=>['sd_'+d,d]),zDiff);
   const list=$('stList'),mine=$('stMine');list.textContent='Đang tải...';mine.textContent='';
+  if(statGame==='zombie')return loadZombieStats(list,mine);
   const q=sb.from('player_stats').select('user_id,username,wins,losses,draws').eq('game',statGame).order('wins',{ascending:false}).limit(10);
   const {data,error}=await q;
   if(error){list.textContent='Chưa tải được bảng xếp hạng (đã chạy supabase_setup_secure.sql chưa?)';return;}
@@ -861,15 +873,70 @@ async function loadStats(){
   const {data:me}=await sb.from('player_stats').select('wins,losses,draws').eq('game',statGame).eq('user_id',user.id).maybeSingle();
   mine.textContent=me?'Của bạn: '+me.wins+' thắng · '+me.losses+' thua · '+me.draws+' hoà':'Bạn chưa có ván nào được lưu';
 }
+const ZDIFFS=['EASY','NORMAL','HARD','INSANE'];
+let zDiff='NORMAL';
+const fmtT=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+async function loadZombieStats(list,mine){
+  const {data,error}=await sb.from('zombie_scores').select('user_id,username,best_score,best_kills,best_secs,best_level').eq('difficulty',zDiff).order('best_score',{ascending:false}).limit(10);
+  if(error){list.textContent='Chưa tải được bảng xếp hạng (đã chạy supabase_zombie.sql chưa?)';return;}
+  list.textContent='';
+  if(!data.length)list.textContent='Chưa có dữ liệu.';
+  data.forEach((r,i)=>{
+    const row=document.createElement('div');
+    row.className='grid grid-cols-[1.5rem_1fr_auto] gap-2 px-2 py-1 rounded '+(user&&r.user_id===user.id?'bg-amber-600/25':'bg-stone-800/60');
+    [String(i+1),r.username,r.best_score+' đ · '+r.best_kills+'🧟 · '+fmtT(r.best_secs)].forEach((t,k)=>{
+      const s=document.createElement('span');s.textContent=t;
+      s.className=k===1?'truncate text-amber-200':k===2?'text-stone-400':'text-stone-500';row.appendChild(s);});
+    list.appendChild(row);
+  });
+  if(!user){mine.textContent='Đăng nhập để lưu điểm Zombie của bạn';return;}
+  const {data:me}=await sb.from('zombie_scores').select('best_score,best_kills,best_secs,best_level,games').eq('difficulty',zDiff).eq('user_id',user.id).maybeSingle();
+  mine.textContent=me?'Của bạn: '+me.best_score+' đ · '+me.best_kills+' zombie · '+fmtT(me.best_secs)+' · Lv'+me.best_level+' ('+me.games+' ván)':'Bạn chưa có ván nào ở chế độ này';
+}
 $('btnStats').onclick=()=>{show('statsModal',true);loadStats();};
-$('stF').onclick=()=>{statGame='fight';loadStats();};$('stT').onclick=()=>{statGame='ttt';loadStats();};
+$('stF').onclick=()=>{statGame='fight';loadStats();};$('stT').onclick=()=>{statGame='ttt';loadStats();};$('stZ').onclick=()=>{statGame='zombie';loadStats();};
+ZDIFFS.forEach(d=>{$('sd_'+d).onclick=()=>{zDiff=d;loadStats();};});
+$('zTop').onclick=()=>{statGame='zombie';show('statsModal',true);loadStats();};
+
+// Gửi điểm Zombie lên server (server tự kiểm tra tính hợp lý + giới hạn tần suất)
+function zSubmit(d){
+  if(!d)return;
+  const diff=ZDIFFS.includes(d.diff)?d.diff:null;
+  const score=Math.floor(Number(d.score)),kills=Math.floor(Number(d.kills)),secs=Math.floor(Number(d.secs)),level=Math.floor(Number(d.level));
+  if(!diff||![score,kills,secs,level].every(Number.isFinite)||secs<15)return;
+  if(!user)return toast('Đăng nhập để lưu điểm Zombie vào bảng xếp hạng');
+  sb.rpc('submit_zombie_score',{p_diff:diff,p_score:score,p_kills:kills,p_secs:secs,p_level:level}).then(({data,error})=>{
+    if(error)return toast('Không lưu được điểm Zombie');
+    toast({record:'🏆 Kỷ lục mới! Đã lưu '+score+' điểm',ok:'Đã ghi ván (chưa vượt kỷ lục)',implausible:'Điểm không hợp lệ, không được lưu',too_fast:'Nộp điểm quá nhanh, ván này không được tính'}[data]||'Không lưu được điểm Zombie');
+  });
+}
+// Móc vào hàm gameOver() của zombie.html (cùng origin) để lấy điểm cuối ván mà không cần sửa file đó
+function zHook(win){
+  try{
+    if(!win||typeof win.gameOver!=='function'||win.__zHooked)return;
+    const orig=win.gameOver;
+    win.gameOver=function(){
+      let d=null;
+      try{if(win.eval('isGameRunning'))d=win.eval('({score:score,kills:kills,secs:Math.floor(gameTime),level:player.level,diff:currentDifficulty})');}catch(e){}
+      const r=orig.apply(this,arguments);
+      if(d)zSubmit(d);
+      return r;
+    };
+    win.__zHooked=true;
+  }catch(e){}
+}
+// Phương án dự phòng: zombie.html có thể tự gửi postMessage({type:'zombie_score',...})
+window.addEventListener('message',e=>{
+  if(e.source!==$('zFrame').contentWindow||!e.data||e.data.type!=='zombie_score')return;
+  zSubmit(e.data);
+});
 $('stClose').onclick=()=>show('statsModal',false);
 setAuthTab('login');
 
 // ================= ZOMBIE (zombie.html trong iframe) =================
 function zOpen(){
   const f=$('zFrame');
-  f.onload=()=>{try{f.contentWindow.focus();}catch(e){}};
+  f.onload=()=>{try{f.contentWindow.focus();}catch(e){}zHook(f.contentWindow);};
   f.src='zombie.html';show('zScreen',true);
 }
 function zClose(){show('zScreen',false);$('zFrame').onload=null;$('zFrame').src='about:blank';setTab('z');}
